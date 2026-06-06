@@ -111,7 +111,7 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
 
     console.log('Backend yanıt verisi:', error.response?.data);
 
-    console.log('İstek URL:', error.config?.baseURL + error.config?.url);
+    console.log('İstek URL:', (error.config?.baseURL ?? '') + (error.config?.url ?? ''));
     console.log('İstek yöntemi:', error.config?.method?.toUpperCase());
     console.log('İstek parametreleri:', error.config?.params);
     console.log('İstek gövdesi:', error.config?.data);

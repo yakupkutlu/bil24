@@ -21,7 +21,7 @@ export function CustomerOrdersPage() {
     return orders.filter((booking) => {
       const bookingNumber = booking.bookingNumber?.toLowerCase() ?? '';
       const status = booking.status?.toLowerCase() ?? '';
-      const customerName = booking.customer?.fullName?.toLowerCase() ?? '';
+      const customerName = booking.user?.fullName?.toLowerCase() ?? '';
 
       return (
         bookingNumber.includes(q) ||
