@@ -1,2 +1,0 @@
-import { api, unwrap } from './api'; import type { Seat } from '@/types';
-export const seatsService={availability:(showtimeId:string)=>api.get(`/showtimes/${showtimeId}/seats`).then(unwrap<{seats:Seat[]}>),hold:(showtimeId:string,seatCodes:string[],sessionId?:string)=>api.post(`/showtimes/${showtimeId}/hold-seats`,{seatCodes,sessionId}).then(unwrap),release:(showtimeId:string,seatCodes:string[],sessionId?:string)=>api.post(`/showtimes/${showtimeId}/release-seats`,{seatCodes,sessionId}).then(unwrap)};

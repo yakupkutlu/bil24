@@ -1,62 +1,96 @@
-import type { FormEvent, ReactNode } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useState } from 'react';
-import { Wifi } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { useAuthStore } from '@/stores/auth.store';
-import { roleHome } from '@/constants/roles';
-import { authService } from '@/services/auth.service';
-import { useToast } from '@/components/ui/ToastProvider';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from '../../utils/api';
+import { api, useAuthStore } from '../../utils/api';
 
-export function LoginPage() {
+export default function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const setSession = useAuthStore((s) => s.setSession);
-  const { showToast } = useToast();
-  const [email, setEmail] = useState('customer@tiatru.com');
-  const [password, setPassword] = useState('Password123');
-  const [rememberMe, setRememberMe] = useState(true);
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
-  const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    setApiMessage(null);
+    setError('');
     try {
-      const response = await authService.login({ email, password, rememberMe });
-      const user = response.user;
-      setSession(user, response.accessToken);
-      showToast('Backend API ile giriş yapıldı.');
-      navigate(searchParams.get('next') || roleHome[user.role]);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Giriş başarısız';
-      setApiMessage(message);
-      showToast('Backend girişi başarısız oldu. Backend’i, seed kullanıcıları ve .env API URL değerini kontrol et.', 'error');
+      const res = await api.post('/auth/login', form);
+      setAuth(res.data.user, res.data.access_token);
+      const role = res.data.user.role;
+      if (role === 'super_admin' || role === 'admin') navigate('/admin/dashboard');
+      else if (role === 'operator') navigate('/operator/scan');
+      else navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('auth.loginError'));
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <AuthShell title="Tekrar hoş geldin" subtitle="Tiatru hesabına gerçek backend API üzerinden giriş yap.">
-      <form onSubmit={submit} className="space-y-4">
-        <Input label="E-posta" value={email} onChange={(event) => setEmail(event.target.value)} />
-        <Input label="Şifre" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-        <div className="flex justify-between text-sm text-white/60">
-          <label><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} className="mr-2" />Beni hatırla</label>
-          <Link to="/forgot-password" className="text-theater-gold">Şifremi unuttum</Link>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bilet Sistemi</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{t('auth.loginSubtitle')}</p>
         </div>
-        {apiMessage && <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-100">{apiMessage}</div>}
-        <Button className="w-full" disabled={loading}><Wifi size={16} /> {loading ? 'Backend ile giriş yapılıyor...' : 'Giriş yap'}</Button>
-        <p className="text-center text-sm text-white/60">Hesabın yok mu? <Link to="/register" className="text-theater-gold">Kayıt ol</Link></p>
-      </form>
-    </AuthShell>
-  );
-}
 
-function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
-  return <main className="grid min-h-[calc(100vh-80px)] place-items-center px-4 py-12"><Card className="w-full max-w-md"><CardContent className="p-8"><h1 className="font-serif text-4xl text-white">{title}</h1><p className="mb-6 mt-2 text-white/60">{subtitle}</p>{children}</CardContent></Card></main>;
+        <div className="card">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg px-4 py-3 text-sm">
+                {error}
+              </div>
+            )}
+            <div>
+              <label className="form-label">{t('auth.email')}</label>
+              <input
+                type="email"
+                className="form-input"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div>
+              <label className="form-label">{t('auth.password')}</label>
+              <input
+                type="password"
+                className="form-input"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+            <button type="submit" className="btn-primary w-full" disabled={loading}>
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  {t('common.loading')}
+                </span>
+              ) : t('auth.login')}
+            </button>
+          </form>
+          <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            {t('auth.noAccount')}{' '}
+            <Link to="/register" className="text-primary-600 hover:underline font-medium">
+              {t('auth.register')}
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

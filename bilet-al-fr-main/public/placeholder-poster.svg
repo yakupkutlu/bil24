@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200" role="img" aria-label="Tiatru poster placeholder">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#12070A"/><stop offset=".55" stop-color="#0B0B0D"/><stop offset="1" stop-color="#7A0C0C"/></linearGradient><radialGradient id="s" cx="50%" cy="25%" r="70%"><stop stop-color="#B8860B" stop-opacity=".38"/><stop offset="1" stop-color="#B8860B" stop-opacity="0"/></radialGradient></defs>
-  <rect width="800" height="1200" fill="url(#g)"/><rect width="800" height="1200" fill="url(#s)"/>
-  <path d="M120 180h560v840H120z" fill="none" stroke="#B8860B" stroke-width="6" opacity=".45"/>
-  <circle cx="400" cy="420" r="115" fill="#B8860B" opacity=".18"/>
-  <text x="400" y="610" text-anchor="middle" fill="#F5E8C7" font-size="74" font-family="Georgia,serif">Tiatru</text>
-  <text x="400" y="672" text-anchor="middle" fill="#B8860B" font-size="28" font-family="Arial,sans-serif" letter-spacing="8">LIVE STAGE</text>
-</svg>

@@ -1,1 +1,0 @@
-import type { Ticket } from '@/types'; import { TicketCard } from './TicketCard'; export function TicketPDFPreview({ticket}:{ticket:Ticket}){return <div className="rounded-3xl bg-white p-4 text-black"><TicketCard ticket={ticket}/></div>}

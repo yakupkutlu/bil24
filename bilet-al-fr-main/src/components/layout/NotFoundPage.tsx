@@ -1,2 +1,0 @@
-import { Link } from 'react-router-dom'; import { Button } from '@/components/ui/Button';
-export function NotFoundPage(){return <main className="grid min-h-screen place-items-center bg-curtain p-6 text-center"><div><p className="text-theater-gold">404</p><h1 className="text-5xl font-bold">Perde kapandı</h1><p className="mt-3 text-white/60">Aradığınız sayfa bulunamadı.</p><Link to="/"><Button className="mt-6" variant="gold">Ana Sayfa</Button></Link></div></main>}

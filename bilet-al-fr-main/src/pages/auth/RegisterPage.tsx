@@ -1,65 +1,80 @@
-import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { useAuthStore } from '@/stores/auth.store';
-import { authService } from '@/services/auth.service';
-import { useToast } from '@/components/ui/ToastProvider';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from '../../utils/api';
+import { api, useAuthStore } from '../../utils/api';
 
-export function RegisterPage() {
+export default function RegisterPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const setSession = useAuthStore((state) => state.setSession);
-  const { showToast } = useToast();
-  const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const [form, setForm] = useState({ name: '', email: '', password: '', password_confirm: '' });
   const [loading, setLoading] = useState(false);
-  const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
-  const update = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setApiMessage(null);
-    if (form.password !== form.confirmPassword) {
-      setApiMessage('Şifreler eşleşmiyor.');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.password !== form.password_confirm) {
+      setError(t('auth.passwordMismatch'));
       return;
     }
     setLoading(true);
+    setError('');
     try {
-      const response = await authService.register({ fullName: form.fullName, email: form.email, phone: form.phone, password: form.password });
-      setSession(response.user, response.accessToken);
-      showToast('Hesap canlı backend API ile oluşturuldu.');
-      navigate('/customer/dashboard');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Kayıt başarısız';
-      setApiMessage(message);
-      showToast('Backend kaydı başarısız oldu. Backend doğrulamasını ve API URL değerini kontrol et.', 'error');
+      const res = await api.post('/auth/register', { name: form.name, email: form.email, password: form.password });
+      setAuth(res.data.user, res.data.access_token);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('auth.registerError'));
     } finally {
       setLoading(false);
     }
-  }
-
+  };
 
   return (
-    <main className="grid min-h-[calc(100vh-80px)] place-items-center px-4 py-12">
-      <Card className="w-full max-w-2xl">
-        <CardContent className="p-8">
-          <h1 className="font-serif text-4xl text-white">Tiatru’ya katıl</h1>
-          <p className="mt-2 text-white/60">Backend registration only. Kullanıcılar are created by the API.</p>
-          <form onSubmit={submit} className="mt-6 grid gap-4 md:grid-cols-2">
-            <Input label="Ad soyad" required value={form.fullName} onChange={(event) => update('fullName', event.target.value)} />
-            <Input label="E-posta" type="email" required value={form.email} onChange={(event) => update('email', event.target.value)} />
-            <Input label="Telefon" value={form.phone} onChange={(event) => update('phone', event.target.value)} />
-            <Input label="Şifre" type="password" required value={form.password} onChange={(event) => update('password', event.target.value)} />
-            <Input label="Şifreyi onayla" type="password" required value={form.confirmPassword} onChange={(event) => update('confirmPassword', event.target.value)} />
-            <label className="text-sm text-white/60 md:col-span-2"><input type="checkbox" className="mr-2" required /> Şartları ve pazarlama iznini kabul ediyorum.</label>
-            {apiMessage && <div className="rounded-2xl border border-yellow-400/20 bg-yellow-500/10 p-3 text-sm text-yellow-100 md:col-span-2">{apiMessage}</div>}
-            <Button className="md:col-span-2" disabled={loading}>{loading ? 'Backend hesabı oluşturuluyor...' : 'Canlı API ile kayıt ol'}</Button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2H5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bilet Sistemi</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{t('auth.registerSubtitle')}</p>
+        </div>
+        <div className="card">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg px-4 py-3 text-sm">
+                {error}
+              </div>
+            )}
+            <div>
+              <label className="form-label">{t('auth.fullName')}</label>
+              <input type="text" className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </div>
+            <div>
+              <label className="form-label">{t('auth.email')}</label>
+              <input type="email" className="form-input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            </div>
+            <div>
+              <label className="form-label">{t('auth.password')}</label>
+              <input type="password" className="form-input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+            </div>
+            <div>
+              <label className="form-label">{t('auth.confirmPassword')}</label>
+              <input type="password" className="form-input" value={form.password_confirm} onChange={(e) => setForm({ ...form, password_confirm: e.target.value })} required />
+            </div>
+            <button type="submit" className="btn-primary w-full" disabled={loading}>
+              {loading ? t('common.loading') : t('auth.register')}
+            </button>
           </form>
-          <p className="mt-5 text-center text-sm text-white/60"><Link to="/login" className="text-theater-gold">Zaten hesabım var</Link></p>
-        </CardContent>
-      </Card>
-    </main>
+          <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            {t('auth.haveAccount')}{' '}
+            <Link to="/login" className="text-primary-600 hover:underline font-medium">{t('auth.login')}</Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
