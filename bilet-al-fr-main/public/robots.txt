@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /box-office/
+Disallow: /customer/
+Sitemap: /sitemap.xml

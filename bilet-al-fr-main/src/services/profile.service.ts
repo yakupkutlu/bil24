@@ -1,0 +1,2 @@
+import { api, unwrap } from './api'; import type { User,UserPreferences } from '@/types';
+export const profileService={getProfile:()=>api.get('/profile').then(unwrap<User>),updateProfile:(payload:Partial<User>)=>api.put('/profile',payload).then(unwrap<User>),updatePassword:(payload:{currentPassword:string;newPassword:string})=>api.put('/profile/password',payload).then(unwrap),updatePreferences:(payload:Partial<UserPreferences>)=>api.put('/profile/preferences',payload).then(unwrap<User>)};

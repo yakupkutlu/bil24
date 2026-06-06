@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import validate from '../../middlewares/validate.middleware.js';
+import { protect } from '../../middlewares/auth.middleware.js';
+import { authorize } from '../../middlewares/role.middleware.js';
+import { ROLES } from '../../utils/constants.js';
+import * as controller from './auditLog.controller.js';
+import { idSchema, listAuditLogsSchema } from './auditLog.validator.js';
+const router = Router();
+router.use(protect, authorize(ROLES.SUPER_ADMIN, ROLES.ADMIN));
+router.get('/', validate(listAuditLogsSchema), controller.listAuditLogs);
+router.get('/:id', validate(idSchema), controller.getAuditLog);
+export default router;

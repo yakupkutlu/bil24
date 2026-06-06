@@ -1,0 +1,3 @@
+import { PropsWithChildren } from 'react'; import { Navigate,useLocation } from 'react-router-dom'; import type { Role } from '@/types'; import { useAuthStore } from '@/stores/auth.store'; import { ForbiddenPage } from './ForbiddenPage';
+export function ProtectedRoute({children,roles}:PropsWithChildren<{roles?:Role[]}>){const{isAuthenticated,user}=useAuthStore(); const location=useLocation(); if(!isAuthenticated)return <Navigate to="/login" replace state={{from:location.pathname}}/>; if(roles?.length&&user&&!roles.includes(user.role))return <ForbiddenPage/>; return <>{children}</>}
+export function RoleGuard({children,roles}:PropsWithChildren<{roles:Role[]}>){return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>}

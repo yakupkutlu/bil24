@@ -1,0 +1,2 @@
+import { Button } from './Button'; import { Modal } from './Modal';
+export function ConfirmDialog({open,title,message,onCancel,onConfirm}:{open:boolean;title:string;message:string;onCancel:()=>void;onConfirm:()=>void}){return <Modal open={open} title={title} onClose={onCancel}><p className="mb-6 text-white/70">{message}</p><div className="flex justify-end gap-3"><Button variant="secondary" onClick={onCancel}>Vazgeç</Button><Button variant="danger" onClick={onConfirm}>Onayla</Button></div></Modal>}
