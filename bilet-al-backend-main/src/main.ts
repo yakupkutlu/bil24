@@ -15,12 +15,16 @@ async function bootstrap() {
   app.use(compression());
 
   // CORS
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
-  });
+ 
+
+app.enableCors({
+  origin: [
+    'https://www.ebilet24.com',
+    'https://ebilet24.com',
+    'http://localhost:5173', // geliştirme için
+  ],
+  credentials: true,
+});
 
   // Global prefix
   app.setGlobalPrefix('api/v1');
