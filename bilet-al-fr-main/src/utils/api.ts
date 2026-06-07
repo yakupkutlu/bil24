@@ -1,58 +1,13 @@
-// ============================================================
-// API CLIENT
-// ============================================================
-
 import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { User } from '../types';
 
-const api = axios.create({
-  baseURL: '/api/v1',
-  withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-// Request interceptor - attach token
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  const lang = localStorage.getItem('lang') || 'tr';
-  config.headers['Accept-Language'] = lang;
-  return config;
-});
-
-// Response interceptor - handle 401
-api.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const { refreshToken, userId } = useAuthStore.getState();
-        const res = await axios.post('/api/v1/auth/refresh', { userId, refreshToken });
-        const { accessToken, refreshToken: newRefresh } = res.data;
-        useAuthStore.getState().setTokens(accessToken, newRefresh);
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return api(originalRequest);
-      } catch {
-        useAuthStore.getState().logout();
-        window.location.href = '/giris';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-export default api;
+export { useTranslation } from 'react-i18next';
 
 // ============================================================
 // AUTH STORE - Zustand
 // ============================================================
-
-// store/authStore.ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
@@ -120,3 +75,46 @@ export const useAppStore = create<AppState>()(
     { name: 'app-storage' }
   )
 );
+
+// ============================================================
+// API CLIENT
+// ============================================================
+
+const api = axios.create({
+  baseURL: '/api/v1',
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const lang = localStorage.getItem('lang') || 'tr';
+  config.headers['Accept-Language'] = lang;
+  return config;
+});
+
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const { refreshToken, userId } = useAuthStore.getState();
+        const res = await axios.post('/api/v1/auth/refresh', { userId, refreshToken });
+        const { accessToken, refreshToken: newRefresh } = res.data;
+        useAuthStore.getState().setTokens(accessToken, newRefresh);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch {
+        useAuthStore.getState().logout();
+        window.location.href = '/giris';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export { api };
+export default api;

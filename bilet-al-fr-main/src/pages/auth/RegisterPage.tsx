@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from '../../utils/api';
-import { api, useAuthStore } from '../../utils/api';
+import { api } from '../../utils/api';
 
 export default function RegisterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const [form, setForm] = useState({ name: '', email: '', password: '', password_confirm: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', password_confirm: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,9 +19,13 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/register', { name: form.name, email: form.email, password: form.password });
-      setAuth(res.data.user, res.data.access_token);
-      navigate('/');
+      await api.post('/auth/register', {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+      });
+      navigate('/giris');
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.registerError'));
     } finally {
@@ -42,16 +45,22 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bilet Sistemi</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">{t('auth.registerSubtitle')}</p>
         </div>
-        <div className="card">
+        <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg px-4 py-3 text-sm">
                 {error}
               </div>
             )}
-            <div>
-              <label className="form-label">{t('auth.fullName')}</label>
-              <input type="text" className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="form-label">{t('common.name')}</label>
+                <input type="text" className="form-input" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required />
+              </div>
+              <div>
+                <label className="form-label">{t('auth.lastName') || 'Soyad'}</label>
+                <input type="text" className="form-input" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} required />
+              </div>
             </div>
             <div>
               <label className="form-label">{t('auth.email')}</label>
@@ -70,8 +79,8 @@ export default function RegisterPage() {
             </button>
           </form>
           <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            {t('auth.haveAccount')}{' '}
-            <Link to="/login" className="text-primary-600 hover:underline font-medium">{t('auth.login')}</Link>
+            {t('auth.hasAccount')}{' '}
+            <Link to="/giris" className="text-primary-600 hover:underline font-medium">{t('auth.login')}</Link>
           </div>
         </div>
       </div>

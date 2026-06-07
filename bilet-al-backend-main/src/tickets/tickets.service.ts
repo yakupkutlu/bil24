@@ -32,15 +32,13 @@ export class TicketsService {
       tn: ticketNumber,
       ts: Date.now(),
     });
-    const qrDataUrl = await QRCode.toDataURL(payload, {
+    const toDataURL = QRCode.toDataURL as (text: string, opts: object) => Promise<string>;
+    return toDataURL(payload, {
       errorCorrectionLevel: 'H',
-      type: 'image/png',
-      quality: 0.92,
       margin: 1,
       color: { dark: '#000000', light: '#FFFFFF' },
       width: 300,
     });
-    return qrDataUrl;
   }
 
   // Create ticket(s) - transactional
@@ -52,7 +50,8 @@ export class TicketsService {
       });
       if (!session) throw new NotFoundException('Seans bulunamadı');
       if (session.status !== 'scheduled') throw new BadRequestException('Bu seans için bilet satışı aktif değil');
-      if (session.availableCount < dto.seats.length)
+      const availableCount = session.totalCapacity - session.soldCount - session.reservedCount;
+      if (availableCount < dto.seats.length)
         throw new BadRequestException('Yeterli koltuk yok');
 
       const tickets: Ticket[] = [];

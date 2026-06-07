@@ -702,6 +702,87 @@ export class Notification {
   createdAt: Date;
 }
 
+// ==================== REFRESH TOKEN ====================
+
+@Entity('refresh_tokens')
+export class RefreshToken {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'user_id' })
+  userId: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @Column({ type: 'text' })
+  token: string;
+
+  @Column({ name: 'expires_at' })
+  expiresAt: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+}
+
+// ==================== SYSTEM SETTING ====================
+
+@Entity('system_settings')
+export class SystemSetting {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ unique: true })
+  @Index()
+  key: string;
+
+  @Column({ type: 'text', nullable: true })
+  value: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
+
+// ==================== SESSION PRICE CATEGORY ====================
+
+@Entity('session_price_categories')
+export class SessionPriceCategory {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'session_id' })
+  sessionId: string;
+
+  @ManyToOne(() => Session)
+  @JoinColumn({ name: 'session_id' })
+  session: Session;
+
+  @Column()
+  name: string;
+
+  @Column({ name: 'name_en', nullable: true })
+  nameEn: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  price: number;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ name: 'max_per_order', nullable: true })
+  maxPerOrder: number;
+
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+}
+
 // ==================== AUDIT LOG ====================
 
 @Entity('audit_logs')

@@ -17,10 +17,9 @@ export default function LoginPage() {
     setError('');
     try {
       const res = await api.post('/auth/login', form);
-      setAuth(res.data.user, res.data.access_token);
+      setAuth(res.data.user, res.data.accessToken, res.data.refreshToken);
       const role = res.data.user.role;
-      if (role === 'super_admin' || role === 'admin') navigate('/admin/dashboard');
-      else if (role === 'operator') navigate('/operator/scan');
+      if (role === 'super_admin' || role === 'operator') navigate('/panel');
       else navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || t('auth.loginError'));
@@ -85,7 +84,7 @@ export default function LoginPage() {
           </form>
           <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
             {t('auth.noAccount')}{' '}
-            <Link to="/register" className="text-primary-600 hover:underline font-medium">
+            <Link to="/kayit" className="text-primary-600 hover:underline font-medium">
               {t('auth.register')}
             </Link>
           </div>

@@ -25,7 +25,7 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/my-tickets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600">{t('tickets.myTickets')}</Link>
-            <Link to="/login" className="btn-primary btn-sm">{t('auth.login')}</Link>
+            <Link to="/giris" className="btn-primary btn-sm">{t('auth.login')}</Link>
           </div>
         </div>
       </header>

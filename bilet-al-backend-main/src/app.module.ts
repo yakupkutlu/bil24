@@ -32,7 +32,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       password: process.env.DB_PASSWORD ?? 'postgres',
       database: process.env.DB_NAME ?? 'bilet_sistemi',
       entities: [User, RefreshToken, SystemSetting, Venue, Seat, Event, Session, SessionPriceCategory, SessionSeat, Payment, Ticket, TicketScanLog, Notification, AuditLog],
-      synchronize: false,
+      synchronize: true,
       logging: process.env.NODE_ENV === 'development',
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }),

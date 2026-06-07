@@ -4,12 +4,12 @@
   "description": "Bilet Organizasyon ve Satış Sistemi - Backend",
   "scripts": {
     "build": "nest build",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start": "npx nest start",
+    "start:dev": "npx nest start --watch",
     "start:prod": "node dist/main",
-    "migration:generate": "typeorm migration:generate",
-    "migration:run": "typeorm migration:run",
-    "migration:revert": "typeorm migration:revert"
+    "migration:generate": "npx typeorm migration:generate",
+    "migration:run": "npx typeorm migration:run",
+    "migration:revert": "npx typeorm migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -41,9 +41,7 @@
     "cookie-parser": "^1.4.6",
     "helmet": "^7.0.0",
     "compression": "^1.7.4",
-    "pdfkit": "^0.13.0",
-    "canvas": "^2.11.2",
-    "sharp": "^0.32.1"
+    "pdfkit": "^0.13.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

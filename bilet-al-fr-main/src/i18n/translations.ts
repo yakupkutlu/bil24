@@ -260,6 +260,14 @@ export const tr = {
       dark: 'Koyu',
       language: 'Dil',
     },
+    // Home
+    home: {
+      hero: 'Etkinlikleri Keşfet, Biletini Al!',
+      heroSub: 'En iyi konser, tiyatro ve etkinlik biletleri tek platformda.',
+      searchPlaceholder: 'Etkinlik veya sanatçı ara...',
+      upcomingEvents: 'Yaklaşan Etkinlikler',
+      noEvents: 'Henüz etkinlik bulunmuyor.',
+    },
     // Seat map
     seatMap: {
       title: 'Koltuk Planı',
@@ -518,6 +526,13 @@ export const en = {
       light: 'Light',
       dark: 'Dark',
       language: 'Language',
+    },
+    home: {
+      hero: 'Discover Events, Get Your Tickets!',
+      heroSub: 'Best concert, theater and event tickets on one platform.',
+      searchPlaceholder: 'Search events or artists...',
+      upcomingEvents: 'Upcoming Events',
+      noEvents: 'No events yet.',
     },
     seatMap: {
       title: 'Seat Map',
