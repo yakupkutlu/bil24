@@ -67,6 +67,9 @@ export const authApi = {
     api.post<{ token: string; user: import('../types').Profile }>('/api/auth/register', { email, password, full_name, phone, role }),
 
   me: () => api.get<import('../types').Profile>('/api/auth/me'),
+
+  updateProfile: (data: { full_name?: string; phone?: string; current_password?: string; new_password?: string }) =>
+    api.put<import('../types').Profile>('/api/auth/profile', data),
 };
 
 // ─── Users ────────────────────────────────────────────────────────────────────

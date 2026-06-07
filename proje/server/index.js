@@ -180,6 +180,39 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
   }
 });
 
+app.put('/api/auth/profile', authMiddleware, async (req, res) => {
+  const { full_name, phone, current_password, new_password } = req.body;
+  const userId = req.user.id;
+  try {
+    if (new_password) {
+      if (!current_password) return res.status(400).json({ error: 'Mevcut şifre gerekli' });
+      const { rows } = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+      if (rows.length === 0) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+      const valid = await bcrypt.compare(current_password, rows[0].password_hash);
+      if (!valid) return res.status(400).json({ error: 'Mevcut şifre hatalı' });
+      const hash = await bcrypt.hash(new_password, 10);
+      await pool.query(
+        `UPDATE users SET full_name = COALESCE($1, full_name), phone = COALESCE($2, phone),
+         password_hash = $3, updated_at = now() WHERE id = $4`,
+        [full_name || null, phone || null, hash, userId]
+      );
+    } else {
+      await pool.query(
+        `UPDATE users SET full_name = COALESCE($1, full_name), phone = COALESCE($2, phone),
+         updated_at = now() WHERE id = $3`,
+        [full_name || null, phone || null, userId]
+      );
+    }
+    const { rows: updated } = await pool.query(
+      'SELECT id, email, full_name, phone, role, is_active, created_at, updated_at FROM users WHERE id = $1',
+      [userId]
+    );
+    res.json(updated[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── USERS ────────────────────────────────────────────────────────────────────
 
 app.get('/api/users', authMiddleware, adminOnly, async (req, res) => {

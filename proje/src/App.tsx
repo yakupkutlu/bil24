@@ -21,6 +21,7 @@ import Reports from './components/admin/Reports';
 import TicketDesignPage from './components/admin/TicketDesignPage';
 import NotificationSettings from './components/notifications/NotificationSettings';
 import MyTickets from './pages/MyTickets';
+import ProfilePage from './pages/ProfilePage';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, loading } = useAuth();
@@ -75,6 +76,7 @@ function AppRoutes() {
         <Route path="sessions/new" element={<ProtectedRoute roles={['super_admin']}><SessionForm /></ProtectedRoute>} />
         <Route path="sessions/:id/edit" element={<ProtectedRoute roles={['super_admin']}><SessionForm /></ProtectedRoute>} />
         <Route path="my-tickets" element={<MyTickets />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="ticket-sales" element={<ProtectedRoute><TicketSales /></ProtectedRoute>} />
         <Route path="qr-check" element={<ProtectedRoute roles={['operator', 'super_admin']}><QRCheck /></ProtectedRoute>} />
         <Route path="hall-status" element={<ProtectedRoute roles={['operator', 'super_admin']}><HallStatus /></ProtectedRoute>} />

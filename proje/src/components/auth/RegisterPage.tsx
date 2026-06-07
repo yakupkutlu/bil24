@@ -8,18 +8,41 @@ export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const { signUp } = useAuth();
 
-  const role = searchParams.get('role') || 'customer';
+  const role = (searchParams.get('role') || 'customer') as import('../../types').UserRole;
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Türk telefon formatı: 05XX XXX XX XX
+  const formatPhone = (raw: string) => {
+    const d = raw.replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 4) return d;
+    if (d.length <= 7) return `${d.slice(0, 4)} ${d.slice(4)}`;
+    if (d.length <= 9) return `${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7)}`;
+    return `${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7, 9)} ${d.slice(9, 11)}`;
+  };
+
+  const validatePhone = (p: string) => /^05[0-9]{9}$/.test(p.replace(/\D/g, ''));
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
+    setPhoneError(formatted && !validatePhone(formatted) ? 'Geçerli format: 05XX XXX XX XX' : '');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!validatePhone(phone)) {
+      setPhoneError('Geçerli bir Türkiye cep numarası girin (05XX XXX XX XX)');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Şifreler eşleşmiyor. Lütfen kontrol edin.');
@@ -34,7 +57,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await signUp(email, password, fullName, phone, role);
+      await signUp(email, password, fullName, phone.replace(/\D/g, ''), role);
       navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kayıt yapılamadı. Lütfen tekrar deneyin.');
@@ -137,19 +160,32 @@ export default function RegisterPage() {
               {/* Phone Field */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Telefon Numarası
+                  Telefon Numarası <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5" />
                   <input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+90 5XX XXX XXXX"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition"
+                    onChange={handlePhoneChange}
+                    placeholder="05XX XXX XX XX"
+                    maxLength={14}
+                    className={`w-full pl-10 pr-4 py-3 bg-slate-700/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
+                      phoneError
+                        ? 'border-red-500/70 focus:border-red-500/70 focus:ring-red-500/20'
+                        : 'border-slate-600/50 focus:border-blue-500/50 focus:ring-blue-500/20'
+                    }`}
                     required
                   />
                 </div>
+                {phoneError ? (
+                  <p className="mt-1.5 text-xs text-red-400">{phoneError}</p>
+                ) : (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Format: <span className="text-slate-400 font-mono">05XX XXX XX XX</span>
+                    &nbsp;— Biletiniz SMS / e-posta ile bu numaraya iletilecektir.
+                  </p>
+                )}
               </div>
 
               {/* Password Field */}

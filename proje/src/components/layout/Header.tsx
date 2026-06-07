@@ -1,5 +1,5 @@
-import { useLocation } from 'react-router-dom';
-import { Menu, ChevronDown, LogOut, User } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Menu, ChevronDown, LogOut, User, Settings } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -8,6 +8,7 @@ const pageTitle: Record<string, string> = {
   '/events': 'Etkinlikler',
   '/sessions': 'Program',
   '/my-tickets': 'Biletlerim',
+  '/profile': 'Profil Bilgilerim',
   '/ticket-sales': 'Bilet Satış',
   '/qr-check': 'Karekod Kontrol',
   '/hall-status': 'Salon Durumu',
@@ -27,6 +28,7 @@ const roleLabels: Record<string, string> = {
 
 export default function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -81,6 +83,13 @@ export default function Header({ onMenuToggle }: { onMenuToggle: () => void }) {
                     {roleLabels[user.role]}
                   </span>
                 </div>
+                <button
+                  onClick={() => { setIsDropdownOpen(false); navigate('/profile'); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  Profil Ayarları
+                </button>
                 <button
                   onClick={() => { setIsDropdownOpen(false); signOut(); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
