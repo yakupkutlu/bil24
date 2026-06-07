@@ -25,13 +25,16 @@ const pool = new Pool({
 pool.on('connect', () => console.log('PostgreSQL bağlantısı kuruldu'));
 pool.on('error', (err) => console.error('PostgreSQL hatası:', err));
 
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3002')
+  .split(',')
+  .map(o => o.trim());
+
 app.use(cors({
   origin: (origin, callback) => {
-    // localhost'tan gelen her isteğe izin ver (geliştirme ortamı)
-    if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('CORS: izin verilmeyen kaynak'));
+      callback(new Error(`CORS: izin verilmeyen kaynak: ${origin}`));
     }
   },
   credentials: true,
