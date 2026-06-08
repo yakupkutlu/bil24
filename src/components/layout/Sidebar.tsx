@@ -24,6 +24,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
     { label: 'Program', icon: <Clock className="w-5 h-5" />, path: '/sessions', roles: ['customer', 'operator', 'super_admin'] },
     { label: 'Biletlerim', icon: <Ticket className="w-5 h-5" />, path: '/my-tickets', roles: ['customer'] },
     { label: 'Bilet Satış', icon: <ShoppingCart className="w-5 h-5" />, path: '/ticket-sales', roles: ['operator', 'super_admin'] },
+    { label: 'Satılan Biletler', icon: <Ticket className="w-5 h-5" />, path: '/sold-tickets', roles: ['operator', 'super_admin'] },
     { label: 'Karekod Kontrol', icon: <ScanLine className="w-5 h-5" />, path: '/qr-check', roles: ['operator', 'super_admin'] },
     { label: 'Salon Durumu', icon: <LayoutGrid className="w-5 h-5" />, path: '/hall-status', roles: ['operator', 'super_admin'] },
     { label: 'Salon Yönetimi', icon: <Building2 className="w-5 h-5" />, path: '/halls', roles: ['super_admin'] },
