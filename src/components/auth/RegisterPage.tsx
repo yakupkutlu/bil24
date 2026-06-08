@@ -78,21 +78,6 @@ export default function RegisterPage() {
           <Ebilet24Logo className="w-full max-w-sm" />
         </div>
 
-        {/* Feature list */}
-        <div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100">
-            {[
-              'Kolayca hesap oluşturun',
-              'Anında bilet satışına başlayın',
-              'Güvenli ve hızlı işlemler',
-            ].map((text) => (
-              <div key={text} className="flex items-center gap-3 mb-4 last:mb-0">
-                <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                <p className="text-blue-800 font-medium">{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
 
 
            {/* Biletx */}
@@ -114,6 +99,21 @@ export default function RegisterPage() {
         </div>
         
         
+        {/* Feature list */}
+        <div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-100">
+            {[
+              'Kolayca hesap oluşturun',
+              'Anında bilet satışına başlayın',
+              'Güvenli ve hızlı işlemler',
+            ].map((text) => (
+              <div key={text} className="flex items-center gap-3 mb-4 last:mb-0">
+                <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                <p className="text-blue-800 font-medium">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Bottom decorative ticket */}
         <div className="flex justify-center">
