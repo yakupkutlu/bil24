@@ -31,7 +31,7 @@ export default function LoginPage() {
       {/* Left Panel - Branding (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-between p-12">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">BiletOS</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">eBilet24</h1>
           <p className="text-blue-100 text-lg">Bilet Organizasyon ve Satış Sistemi</p>
         </div>
 

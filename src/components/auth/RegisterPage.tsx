@@ -71,7 +71,7 @@ export default function RegisterPage() {
       {/* Left Panel - Branding (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-between p-12">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">BiletOS</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">eBilet24</h1>
           <p className="text-blue-100 text-lg">Bilet Organizasyon ve Satış Sistemi</p>
         </div>
 
@@ -92,11 +92,60 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Decorative elements */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="h-24 bg-white/5 rounded-lg backdrop-blur-sm border border-blue-400/20"></div>
-          <div className="h-24 bg-white/5 rounded-lg backdrop-blur-sm border border-blue-400/20"></div>
-          <div className="h-24 bg-white/5 rounded-lg backdrop-blur-sm border border-blue-400/20"></div>
+        {/* Decorative elements — EBILET24 ticket logo */}
+        <div className="flex justify-center">
+          <div className="w-full backdrop-blur-sm bg-white/5 rounded-xl border border-blue-400/20 p-4 flex items-center justify-center">
+            <svg viewBox="0 0 320 130" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-xs drop-shadow-lg">
+              {/* Ticket body */}
+              <rect x="5" y="5" width="310" height="120" rx="10" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
+
+              {/* Left / right notch */}
+              <circle cx="5"   cy="65" r="10" fill="rgba(37,99,235,0.85)"/>
+              <circle cx="315" cy="65" r="10" fill="rgba(37,99,235,0.85)"/>
+
+              {/* Perforated divider */}
+              <line x1="248" y1="12" x2="248" y2="118" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5" strokeDasharray="5,4"/>
+
+              {/* Repeating TICKET text — top edge */}
+              <text x="18" y="20" fontFamily="Arial" fontSize="6.5" fontWeight="bold" fill="rgba(255,255,255,0.4)" letterSpacing="2">
+                TICKET · TICKET · TICKET · TICKET · TICKET
+              </text>
+
+              {/* Repeating TICKET text — bottom edge */}
+              <text x="18" y="122" fontFamily="Arial" fontSize="6.5" fontWeight="bold" fill="rgba(255,255,255,0.4)" letterSpacing="2">
+                TICKET · TICKET · TICKET · TICKET · TICKET
+              </text>
+
+              {/* Theater masks — tragedy (back-left) */}
+              <g transform="translate(52,32)" opacity="0.65">
+                <ellipse cx="18" cy="22" rx="16" ry="18" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.55)" strokeWidth="1.4"/>
+                <path d="M10 28 Q18 22 26 28" stroke="rgba(255,255,255,0.75)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                <circle cx="13" cy="17" r="2" fill="rgba(255,255,255,0.75)"/>
+                <circle cx="23" cy="17" r="2" fill="rgba(255,255,255,0.75)"/>
+              </g>
+
+              {/* Theater masks — comedy (front-right) */}
+              <g transform="translate(72,28)">
+                <ellipse cx="22" cy="22" rx="19" ry="21" fill="rgba(255,255,255,0.22)" stroke="white" strokeWidth="1.6"/>
+                <path d="M12 28 Q22 37 32 28" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                <circle cx="16" cy="17" r="2.5" fill="white"/>
+                <circle cx="28" cy="17" r="2.5" fill="white"/>
+              </g>
+
+              {/* Brand name */}
+              <text x="125" y="89" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="20" fill="white" letterSpacing="3">
+                EBILET24
+              </text>
+
+              {/* Barcode — right stub */}
+              {[0,4,8,11,15,19,23,27,30,34,38,42,46].map((x, i) => (
+                <rect key={i} x={258 + x} y="30" width={i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1} height="55" fill="rgba(255,255,255,0.8)"/>
+              ))}
+              <text x="279" y="96" textAnchor="middle" fontFamily="monospace" fontSize="6" fill="rgba(255,255,255,0.65)">
+                0123456
+              </text>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -105,14 +154,14 @@ export default function RegisterPage() {
         <div className="w-full max-w-md my-6">
           {/* Mobile Branding */}
           <div className="lg:hidden mb-8 text-center">
-            <h1 className="text-3xl font-bold text-white mb-2">BiletOS</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">eBilet24</h1>
             <p className="text-slate-400">Bilet Organizasyon ve Satış Sistemi</p>
           </div>
 
           {/* Form Card */}
           <div className="bg-slate-800/50 backdrop-blur-md rounded-2xl border border-slate-700/50 p-8 shadow-2xl">
             <h2 className="text-2xl font-bold text-white mb-2">Hesap Oluştur</h2>
-            <p className="text-slate-400 mb-8">BiletOS'a katılın ve bilet satışına başlayın</p>
+            <p className="text-slate-400 mb-8">eBilet24'e katılın ve bilet satışına başlayın</p>
 
             {error && (
               <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">

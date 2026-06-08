@@ -55,7 +55,7 @@ export default function HomePage() {
         <div className="relative z-10 max-w-2xl">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-6 h-6 text-accent-400" />
-            <span className="text-accent-300 font-medium text-sm uppercase tracking-wider">BiletOS ile Kesintisiz Deneyim</span>
+            <span className="text-accent-300 font-medium text-sm uppercase tracking-wider">eBilet24 ile Kesintisiz Deneyim</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
             Etkinlik Biletlerinizi<br />Kolayca Alın

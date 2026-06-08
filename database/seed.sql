@@ -5,11 +5,14 @@
 -- ================================================================
 
 -- Önceki seed verisini temizle (isteğe bağlı)
--- DELETE FROM users WHERE email IN ('admin@biletal.com', 'operator@biletal.com', 'musteri@biletal.com');
+-- DELETE FROM users WHERE email IN ('admin@ebilet24.com', 'operator@ebilet24.com', 'musteri@ebilet24.com');
+
+psql -U bilet_user -d bilet_db
+--Açılan psql ekranına database/schema.sql içeriğini yapıştır, çalıştır.
 
 INSERT INTO users (email, password_hash, full_name, phone, role, is_active) VALUES
   (
-    'admin@biletal.com',
+    'admin@ebilet24.com',
     '$2b$10$Mg6sKQTxuBNsvVFtkG2TNeMW7HGsRX/lDGwwvtPa8SQcUvzTAxwF6',
     'Sistem Yöneticisi',
     '05001234567',
@@ -17,7 +20,7 @@ INSERT INTO users (email, password_hash, full_name, phone, role, is_active) VALU
     true
   ),
   (
-    'operator@biletal.com',
+    'operator@ebilet24.com',
     '$2b$10$PG89jVW/qxnjgM1nKTQAxeeCIdygktcrZHWKiPRy7ZrEwGDiEHN7O',
     'Bilet Operatörü',
     '05001234568',
@@ -25,7 +28,7 @@ INSERT INTO users (email, password_hash, full_name, phone, role, is_active) VALU
     true
   ),
   (
-    'musteri@biletal.com',
+    'musteri@ebilet24.com',
     '$2b$10$7h1NXAnEXixklm2U9skYmu2oOOm4/S0rVxuefVN2HV4jM9XlVOIkq',
     'Test Müşteri',
     '05001234569',
