@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Phone, UserPlus, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Ebilet24Logo from './Ebilet24Logo';
+import Biletx from './biletx';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -93,6 +94,27 @@ export default function RegisterPage() {
           </div>
         </div>
 
+
+           {/* Biletx */}
+        <div>
+          <Biletx count={1} className="w-full" />
+        </div>
+
+        
+           {/* Biletx */}
+        <div>
+          <Biletx count={2} className="w-full" />
+        </div>
+        
+
+        
+           {/* Biletx */}
+        <div>
+          <Biletx count={3} className="w-full" />
+        </div>
+        
+        
+
         {/* Bottom decorative ticket */}
         <div className="flex justify-center">
           <div className="w-full bg-blue-700 rounded-2xl p-5 shadow-lg">
@@ -155,7 +177,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-md my-6">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 flex justify-center">
-            <Ebilet24Logo className="w-72" compact />
+            <Ebilet24Logo className="w-72" />
           </div>
 
           {/* Form card */}
