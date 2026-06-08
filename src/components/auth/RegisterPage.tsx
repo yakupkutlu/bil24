@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Phone, UserPlus, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Ebilet24Logo from './Ebilet24Logo';
-import Biletx from './biletx';
+import Biletx from './TicketImage';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
