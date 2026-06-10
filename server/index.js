@@ -1310,8 +1310,9 @@ app.post('/api/sms/send', authMiddleware, adminOnly, async (req, res) => {
     }
     const ticketUrl      = `${frontendUrl}/bilet/${ticket.ticket_code}`;
     const ticketUrlShort = ticketUrl.replace(/^https?:\/\//, '');
-    const smsText        = `Sayin ${ticket.customer_name}, Bilet linkiniz: ${ticketUrlShort}`;
+    const customerNameUpper = (ticket.customer_name || '').toUpperCase().trim();
 
+    const smsText = `Sayın ${customerNameUpper}, Bilet linkiniz: ${ticketUrlShort}`;
     const provider    = settings.active_provider || 'iletimerkezi';
 
     // ── İleti Merkezi ─────────────────────────────────────────────────────────

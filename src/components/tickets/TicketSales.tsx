@@ -203,37 +203,39 @@ function TicketCard({ data, session }: { data: TicketDisplayData; session: Sessi
     <div className="space-y-3">
       <div ref={cardRef} style={{ fontFamily: 'sans-serif', background: '#fff' }}
         className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="flex">
-          <div className="bg-gray-50 border-r-2 border-dashed border-gray-300 flex flex-col items-center justify-center px-6 py-5 gap-3 min-w-[160px]">
+        <div className="flex flex-col sm:flex-row">
+          {/* QR + PNR */}
+          <div className="bg-gray-50 border-b-2 sm:border-b-0 sm:border-r-2 border-dashed border-gray-300 flex flex-row sm:flex-col items-center justify-center px-6 py-5 gap-4 sm:gap-3 sm:min-w-[160px]">
             {qrDataUrl
-              ? <img src={qrDataUrl} alt="QR" className="w-32 h-32" />
-              : <div className="w-32 h-32 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400">QR yükleniyor</div>}
+              ? <img src={qrDataUrl} alt="QR" className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0" />
+              : <div className="w-28 h-28 sm:w-32 sm:h-32 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400 flex-shrink-0">QR yükleniyor</div>}
             <div className="text-center">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">PNR</p>
-              <p className="font-mono text-xs font-bold text-gray-700">{ticket.ticket_code}</p>
+              <p className="font-mono text-xs font-bold text-gray-700 break-all">{ticket.ticket_code}</p>
             </div>
           </div>
-          <div className="flex-1 p-5 flex flex-col justify-between">
+          {/* Bilet bilgileri */}
+          <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
             <div>
               <div className="mb-3">
-                <h3 className="text-lg font-bold text-gray-900 leading-tight">{session.event?.title || '—'}</h3>
-                <p className="text-base font-semibold text-orange-500 mt-0.5">{ticket.customer_name}</p>
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">{session.event?.title || '—'}</h3>
+                <p className="text-sm sm:text-base font-semibold text-orange-500 mt-0.5">{ticket.customer_name}</p>
               </div>
-              <div className="border-t border-gray-100 pt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <div className="border-t border-gray-100 pt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Tarih</p>
-                  <p className="font-bold text-2xl text-gray-900 leading-none">{sessionDate?.getDate()}</p>
+                  <p className="font-bold text-xl sm:text-2xl text-gray-900 leading-none">{sessionDate?.getDate()}</p>
                   <p className="text-gray-600 text-xs mt-0.5">
                     {sessionDate?.toLocaleDateString('tr-TR', { month: 'long' })} {sessionDate?.getFullYear()} · {sessionDate?.toLocaleDateString('tr-TR', { weekday: 'long' })}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Saat</p>
-                  <span className="inline-block bg-orange-500 text-white text-sm font-bold px-3 py-1 rounded-full">{formatTime(session.start_time)}</span>
+                  <span className="inline-block bg-orange-500 text-white text-xs sm:text-sm font-bold px-3 py-1 rounded-full">{formatTime(session.start_time)}</span>
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Salon</p>
-                  <p className="font-medium text-gray-800 text-xs">📍 {session.hall?.name || '—'}</p>
+                  <p className="font-medium text-gray-800 text-xs truncate">📍 {session.hall?.name || '—'}</p>
                 </div>
                 {seatLabel && (
                   <div>
@@ -246,7 +248,7 @@ function TicketCard({ data, session }: { data: TicketDisplayData; session: Sessi
             <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
               <div className="text-right">
                 <p className="text-[10px] text-gray-400 uppercase tracking-wide">Bilet Fiyatı</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(Number(ticket.total_amount))}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(Number(ticket.total_amount))}</p>
               </div>
             </div>
           </div>
