@@ -240,7 +240,24 @@ INSERT INTO users (email, password_hash, full_name, role) VALUES (
   'super_admin'
 );
 
+-- İlk girişten sonra değiştirin!
+INSERT INTO users (email, password_hash, full_name, role) VALUES (
+  'musteri@biletal.com',
+  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.',
+  'Sistem Yöneticisi',
+  'customer'
+);
+
+
+-- İlk girişten sonra değiştirin!
+INSERT INTO users (email, password_hash, full_name, role) VALUES (
+  'operator@biletal.com',
+  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.',
+  'Sistem Yöneticisi',
+  'operator'
+);
+
 -- ================================================================
 -- Kurulum tamamlandı.
--- Giriş: admin@ebilet24.com  /  Admin123!
+-- Giriş: admin@biletal.com  /  Admin123!
 -- ================================================================
