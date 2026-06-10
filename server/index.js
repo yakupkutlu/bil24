@@ -1163,16 +1163,6 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// ─── DEBUG (geçici) ───────────────────────────────────────────────────────────
-app.get('/api/debug/env', (req, res) => {
-  res.json({
-    FRONTEND_URL:     process.env.FRONTEND_URL     || '(tanımlanmamış)',
-    NODE_ENV:         process.env.NODE_ENV          || '(tanımlanmamış)',
-    PORT:             process.env.PORT              || '(tanımlanmamış)',
-    FRONTEND_URL_raw: process.env.FRONTEND_URL,
-  });
-});
-
 // ─── SMS SETTINGS ─────────────────────────────────────────────────────────────
 
 app.get('/api/sms-settings', authMiddleware, superAdminOnly, async (req, res) => {
@@ -1319,7 +1309,7 @@ app.post('/api/sms/send', authMiddleware, adminOnly, async (req, res) => {
       return res.status(500).json({ error: 'Sunucu yapılandırma hatası: FRONTEND_URL ortam değişkeni ayarlanmamış. Coolify ortam değişkenlerine FRONTEND_URL ekleyin (örn: https://bilet.siteniz.com)' });
     }
     const ticketUrl = `${frontendUrl}/bilet/${ticket.ticket_code}`;
-    const smsText   = `Bilet linkiniz: ${ticketUrl}`;
+    const smsText   = `Sayin ${ticket.customer_name}, Bilet linkiniz: ${ticketUrl}`;
     const provider    = settings.active_provider || 'iletimerkezi';
 
     // ── İleti Merkezi ─────────────────────────────────────────────────────────
