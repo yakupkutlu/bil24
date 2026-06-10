@@ -114,11 +114,11 @@ export default function TicketCard({ ticket, session, seat }: TicketCardProps) {
     <div class="rules-title">Kurallar</div>
     <ul>
       <li>Bu bilet etkinlik girişlerini kontrol etmek amacıyla dijital olarak üretilmiştir.</li>
-      <li>Etkinliğin taahhüt edildiği gibi gerçekleşmesinden biletimGO sorumlu değildir.</li>
+      <li>Etkinliğin taahhüt edildiği gibi gerçekleşmesinden ebilet24 sorumlu değildir.</li>
       <li>Satılan biletler nakde çevrilemez, iade alınamaz, devredilemez ve iptal edilemez.</li>
       <li>Etkinlik süresi boyunca biletinizi muhafaza ediniz. Organizatör dilediği zaman biletleri kontrol edebilir.</li>
-      <li>Bilet kaybı, kopyalanması vb. durumlarda organizatör ve biletimGO herhangi bir sorumluluk kabul etmez.</li>
-      <li>biletimGO'dan aldığınız bu biletin mali bir değeri yoktur. Mali değeri bulunan biletleri ve/veya faturaları organizatörden teslim alabilirsiniz.</li>
+      <li>Bilet kaybı, kopyalanması vb. durumlarda organizatör ve ebilet24 herhangi bir sorumluluk kabul etmez.</li>
+      <li>ebiletim24'dan aldığınız bu biletin mali bir değeri yoktur. Mali değeri bulunan biletleri ve/veya faturaları organizatörden teslim alabilirsiniz.</li>
       <li>Dare Team etkinlik programında değişiklik yapma hakkını saklı tutar. Erteleme, tarih ve saat değişikliği gibi durumlara karşı etkinlik ve organizatörün iletişim kanallarını takip ediniz.</li>
     </ul>
   </div>
@@ -237,11 +237,11 @@ export default function TicketCard({ ticket, session, seat }: TicketCardProps) {
           <ul className="space-y-1">
             {[
               'Bu bilet etkinlik girişlerini kontrol etmek amacıyla dijital olarak üretilmiştir.',
-              'Etkinliğin taahhüt edildiği gibi gerçekleşmesinden biletimGO sorumlu değildir.',
+              'Etkinliğin taahhüt edildiği gibi gerçekleşmesinden ebilet24 sorumlu değildir.',
               'Satılan biletler nakde çevrilemez, iade alınamaz, devredilemez ve iptal edilemez.',
               'Etkinlik süresi boyunca biletinizi muhafaza ediniz. Organizatör dilediği zaman biletleri kontrol edebilir.',
-              'Bilet kaybı, kopyalanması vb. durumlarda organizatör ve biletimGO herhangi bir sorumluluk kabul etmez.',
-              'biletimGO\'dan aldığınız bu biletin mali bir değeri yoktur. Mali değeri bulunan biletleri ve/veya faturaları organizatörden teslim alabilirsiniz.',
+              'Bilet kaybı, kopyalanması vb. durumlarda organizatör ve ebilet24 herhangi bir sorumluluk kabul etmez.',
+              'ebilet24\'dan aldığınız bu biletin mali bir değeri yoktur. Mali değeri bulunan biletleri ve/veya faturaları organizatörden teslim alabilirsiniz.',
               'Dare Team etkinlik programında değişiklik yapma hakkını saklı tutar. Erteleme, tarih ve saat değişikliği gibi durumlara karşı etkinlik ve organizatörün iletişim kanallarını takip ediniz.',
             ].map((rule, i) => (
               <li key={i} className="text-[10px] text-gray-500 leading-relaxed before:content-['—_']">
