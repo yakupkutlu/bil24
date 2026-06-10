@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Home, Calendar, Clock, Ticket, ShoppingCart, ScanLine, LayoutGrid,
   Building2, Users, DollarSign, Palette, Bell, BarChart3,
-  Sun, Moon, LogOut, X,
+  Sun, Moon, LogOut, X, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
@@ -31,6 +31,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
     { label: 'Kullanıcı Yönetimi', icon: <Users className="w-5 h-5" />, path: '/users', roles: ['super_admin'] },
     { label: 'Fiyatlandırma', icon: <DollarSign className="w-5 h-5" />, path: '/pricing', roles: ['super_admin'] },
     { label: 'Bilet Tasarımı', icon: <Palette className="w-5 h-5" />, path: '/ticket-design', roles: ['super_admin'] },
+    { label: 'SMS API Ayarları', icon: <MessageSquare className="w-5 h-5" />, path: '/sms-settings', roles: ['super_admin'] },
     { label: 'Bildirim Ayarları', icon: <Bell className="w-5 h-5" />, path: '/notifications', roles: ['super_admin'] },
     { label: 'Raporlar', icon: <BarChart3 className="w-5 h-5" />, path: '/reports', roles: ['super_admin'] },
   ];

@@ -909,6 +909,228 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// ─── SMS SETTINGS ─────────────────────────────────────────────────────────────
+
+app.get('/api/sms-settings', authMiddleware, superAdminOnly, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, active_provider,
+        im_sender, im_api_key,
+        twilio_account_sid, twilio_from,
+        created_at
+       FROM sms_settings LIMIT 1`
+    );
+    res.json(rows[0] || null);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/sms-settings', authMiddleware, superAdminOnly, async (req, res) => {
+  const {
+    active_provider = 'iletimerkezi',
+    im_sender, im_api_key, im_hash_key,
+    twilio_account_sid, twilio_auth_token, twilio_from,
+  } = req.body;
+
+  try {
+    const existing = await pool.query('SELECT id FROM sms_settings LIMIT 1');
+    let rows;
+    if (existing.rows.length === 0) {
+      ({ rows } = await pool.query(
+        `INSERT INTO sms_settings
+          (active_provider, im_sender, im_api_key, im_hash_key, twilio_account_sid, twilio_auth_token, twilio_from)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         RETURNING id, active_provider, im_sender, im_api_key, twilio_account_sid, twilio_from, created_at`,
+        [active_provider, im_sender||null, im_api_key||null, im_hash_key||null,
+         twilio_account_sid||null, twilio_auth_token||null, twilio_from||null]
+      ));
+    } else {
+      // Hash/token alanlarını sadece dolu gelirse güncelle
+      const updateParts = [
+        `active_provider=$1`,
+        `im_sender=$2`,
+        `im_api_key=$3`,
+        `twilio_account_sid=$5`,
+        `twilio_from=$6`,
+        `updated_at=now()`,
+      ];
+      const params = [
+        active_provider, im_sender||null, im_api_key||null,
+        existing.rows[0].id,
+        twilio_account_sid||null, twilio_from||null,
+      ];
+      if (im_hash_key && im_hash_key.trim()) {
+        updateParts.push(`im_hash_key=$${params.length + 1}`);
+        params.push(im_hash_key);
+      }
+      if (twilio_auth_token && twilio_auth_token.trim()) {
+        updateParts.push(`twilio_auth_token=$${params.length + 1}`);
+        params.push(twilio_auth_token);
+      }
+      ({ rows } = await pool.query(
+        `UPDATE sms_settings SET ${updateParts.join(',')} WHERE id=$4
+         RETURNING id, active_provider, im_sender, im_api_key, twilio_account_sid, twilio_from, created_at`,
+        params
+      ));
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── PUBLIC TICKET (auth gerektirmez — dijital bilet linki için) ───────────────
+
+app.get('/api/public/tickets/:ticketCode', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT t.id, t.ticket_code, t.customer_name, t.customer_phone, t.customer_email,
+        t.status, t.total_amount, t.qr_code_data, t.created_at,
+        json_build_object(
+          'id', s.id, 'session_date', s.session_date, 'start_time', s.start_time,
+          'event', json_build_object('id', e.id, 'title', e.title, 'category', e.category),
+          'hall', json_build_object('id', h.id, 'name', h.name)
+        ) as session,
+        row_to_json(se) as seat
+       FROM tickets t
+       LEFT JOIN sessions s ON s.id = t.session_id
+       LEFT JOIN events e ON e.id = s.event_id
+       LEFT JOIN halls h ON h.id = s.hall_id
+       LEFT JOIN seats se ON se.id = t.seat_id
+       WHERE t.ticket_code = $1`,
+      [req.params.ticketCode.toUpperCase()]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Bilet bulunamadı' });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── SMS GÖNDER ───────────────────────────────────────────────────────────────
+
+// Türk telefon numarasını E.164 formatına çevirir
+function toE164TR(phone) {
+  const d = phone.replace(/\D/g, '');
+  if (d.startsWith('90') && d.length === 12) return '+' + d;   // 905xxxxxxxxx
+  if (d.startsWith('0')  && d.length === 11) return '+9' + d;  // 05xxxxxxxxx
+  if (d.length === 10)                        return '+90' + d; // 5xxxxxxxxx
+  return '+' + d;
+}
+
+app.post('/api/sms/send', authMiddleware, adminOnly, async (req, res) => {
+  const { ticket_id } = req.body;
+  if (!ticket_id) return res.status(400).json({ error: 'ticket_id gerekli' });
+
+  try {
+    const [ticketRes, smsRes] = await Promise.all([
+      pool.query(
+        `SELECT t.ticket_code, t.customer_name, t.customer_phone,
+          json_build_object('title', e.title) as event
+         FROM tickets t
+         LEFT JOIN sessions s ON s.id = t.session_id
+         LEFT JOIN events e ON e.id = s.event_id
+         WHERE t.id = $1`,
+        [ticket_id]
+      ),
+      pool.query(`SELECT active_provider,
+        im_sender, im_api_key, im_hash_key,
+        twilio_account_sid, twilio_auth_token, twilio_from
+       FROM sms_settings LIMIT 1`),
+    ]);
+
+    if (ticketRes.rows.length === 0) return res.status(404).json({ error: 'Bilet bulunamadı' });
+    if (smsRes.rows.length === 0)    return res.status(400).json({ error: 'SMS API ayarları yapılandırılmamış. Ayarlar > SMS API menüsünden ekleyin.' });
+
+    const ticket   = ticketRes.rows[0];
+    const settings = smsRes.rows[0];
+
+    if (!ticket.customer_phone) {
+      return res.status(400).json({ error: 'Müşterinin kayıtlı telefon numarası yok' });
+    }
+
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3002').replace(/\/$/, '');
+    const ticketUrl   = `${frontendUrl}/bilet/${ticket.ticket_code}`;
+    const smsText     = `Bilet linkiniz: ${ticketUrl}`;
+    const provider    = settings.active_provider || 'iletimerkezi';
+
+    // ── İleti Merkezi ─────────────────────────────────────────────────────────
+    if (provider === 'iletimerkezi') {
+      if (!settings.im_api_key || !settings.im_hash_key) {
+        return res.status(400).json({ error: 'İleti Merkezi API bilgileri eksik' });
+      }
+      const { IletiMerkeziClient } = await import('@iletimerkezi/iletimerkezi-node');
+      const senderVal = settings.im_sender?.trim();
+      const senderArg = (!senderVal || senderVal === '-') ? undefined : senderVal;
+      const client   = new IletiMerkeziClient(settings.im_api_key, settings.im_hash_key, senderArg);
+      const phone    = ticket.customer_phone.replace(/\D/g, '');
+      const response = await client.sms().send(phone, smsText);
+      if (response.ok()) {
+        return res.json({ success: true, message: 'SMS başarıyla gönderildi (İleti Merkezi)', orderId: response.getOrderId() });
+      } else {
+        return res.status(400).json({ success: false, error: response.getMessage() });
+      }
+    }
+
+    // ── Twilio ────────────────────────────────────────────────────────────────
+    if (provider === 'twilio') {
+      if (!settings.twilio_account_sid || !settings.twilio_auth_token || !settings.twilio_from) {
+        return res.status(400).json({ error: 'Twilio API bilgileri eksik (Account SID, Auth Token veya From numarası)' });
+      }
+      const twilio = require('twilio');
+      const client = twilio(settings.twilio_account_sid, settings.twilio_auth_token);
+      const to     = toE164TR(ticket.customer_phone);
+      const msg    = await client.messages.create({ body: smsText, from: settings.twilio_from, to });
+      return res.json({ success: true, message: 'SMS başarıyla gönderildi (Twilio)', sid: msg.sid });
+    }
+
+    res.status(400).json({ error: `Bilinmeyen sağlayıcı: ${provider}` });
+  } catch (err) {
+    console.error('SMS send error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── STARTUP: tablolar ────────────────────────────────────────────────────────
+
+(async () => {
+  try {
+    // Yeni şema ile oluştur (fresh install)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sms_settings (
+        id                  SERIAL PRIMARY KEY,
+        active_provider     VARCHAR(20)  NOT NULL DEFAULT 'iletimerkezi',
+        im_sender           VARCHAR(20),
+        im_api_key          VARCHAR(255),
+        im_hash_key         VARCHAR(255),
+        twilio_account_sid  VARCHAR(255),
+        twilio_auth_token   VARCHAR(255),
+        twilio_from         VARCHAR(30),
+        created_at          TIMESTAMPTZ  DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ  DEFAULT NOW()
+      )
+    `);
+    // Eski kurulumlar için migrate (ADD COLUMN IF NOT EXISTS idempotent)
+    const migrations = [
+      `ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS active_provider VARCHAR(20) NOT NULL DEFAULT 'iletimerkezi'`,
+      `ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS im_sender VARCHAR(20)`,
+      `ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS im_api_key VARCHAR(255)`,
+      `ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS im_hash_key VARCHAR(255)`,
+      `ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS twilio_account_sid VARCHAR(255)`,
+      `ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS twilio_auth_token VARCHAR(255)`,
+      `ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS twilio_from VARCHAR(30)`,
+      // Eski sütunlardan veri taşı
+      `UPDATE sms_settings SET im_sender=sender, im_api_key=api_key, im_hash_key=hash_key WHERE im_api_key IS NULL AND api_key IS NOT NULL`,
+    ];
+    for (const sql of migrations) {
+      await pool.query(sql).catch(() => {});
+    }
+  } catch (err) {
+    console.error('sms_settings tablo hatası:', err.message);
+  }
+})();
+
 app.listen(PORT, () => {
   console.log(`Biletal API sunucusu http://localhost:${PORT} adresinde çalışıyor`);
 });

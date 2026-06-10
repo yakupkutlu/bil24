@@ -184,6 +184,41 @@ export const notificationApi = {
     api.put<import('../types').NotificationSettings>('/api/notification-settings', data),
 };
 
+// ─── SMS ──────────────────────────────────────────────────────────────────────
+
+export interface SmsSettings {
+  id?: number;
+  active_provider: 'iletimerkezi' | 'twilio';
+  // İleti Merkezi
+  im_sender?: string;
+  im_api_key?: string;
+  im_hash_key?: string;   // write-only (not returned by GET)
+  // Twilio
+  twilio_account_sid?: string;
+  twilio_auth_token?: string;  // write-only
+  twilio_from?: string;
+  created_at?: string;
+}
+
+export const smsApi = {
+  getSettings: () => api.get<SmsSettings>('/api/sms-settings'),
+  saveSettings: (data: SmsSettings) => api.put<SmsSettings>('/api/sms-settings', data),
+  send: (ticket_id: string) =>
+    api.post<{ success: boolean; message?: string; error?: string; orderId?: string }>(
+      '/api/sms/send', { ticket_id }
+    ),
+};
+
+// ─── Public Ticket (auth yok) ─────────────────────────────────────────────────
+
+const API_BASE_RAW = (import.meta.env.VITE_API_URL || 'http://localhost:3001') as string;
+
+export async function fetchPublicTicket(ticketCode: string) {
+  const res = await fetch(`${API_BASE_RAW}/api/public/tickets/${ticketCode.toUpperCase()}`);
+  if (!res.ok) throw new Error('Bilet bulunamadı');
+  return res.json();
+}
+
 export const ticketDesignApi = {
   get: () => api.get<import('../types').TicketDesign>('/api/ticket-design'),
   update: (data: Partial<import('../types').TicketDesign>) =>

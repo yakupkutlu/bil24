@@ -22,6 +22,8 @@ import TicketDesignPage from './components/admin/TicketDesignPage';
 import NotificationSettings from './components/notifications/NotificationSettings';
 import MyTickets from './pages/MyTickets';
 import SoldTickets from './pages/SoldTickets';
+import DigitalTicket from './pages/DigitalTicket';
+import SmsSettingsPage from './pages/SmsSettings';
 import ProfilePage from './pages/ProfilePage';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
@@ -62,6 +64,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+      <Route path="/bilet/:ticketCode" element={<DigitalTicket />} />
 
       <Route path="/" element={
         <ProtectedRoute>
@@ -90,6 +93,7 @@ function AppRoutes() {
         <Route path="users" element={<ProtectedRoute roles={['super_admin']}><UserManagement /></ProtectedRoute>} />
         <Route path="reports" element={<ProtectedRoute roles={['super_admin']}><Reports /></ProtectedRoute>} />
         <Route path="notifications" element={<ProtectedRoute roles={['super_admin']}><NotificationSettings /></ProtectedRoute>} />
+        <Route path="sms-settings" element={<ProtectedRoute roles={['super_admin']}><SmsSettingsPage /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
