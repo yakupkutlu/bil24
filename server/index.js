@@ -1164,7 +1164,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ─── DEBUG (geçici) ───────────────────────────────────────────────────────────
-app.get('/api/debug/env', authMiddleware, superAdminOnly, (req, res) => {
+app.get('/api/debug/env', (req, res) => {
   res.json({
     FRONTEND_URL:     process.env.FRONTEND_URL     || '(tanımlanmamış)',
     NODE_ENV:         process.env.NODE_ENV          || '(tanımlanmamış)',
