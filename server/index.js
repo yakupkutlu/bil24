@@ -1308,8 +1308,10 @@ app.post('/api/sms/send', authMiddleware, adminOnly, async (req, res) => {
     if (!frontendUrl) {
       return res.status(500).json({ error: 'Sunucu yapılandırma hatası: FRONTEND_URL ortam değişkeni ayarlanmamış. Coolify ortam değişkenlerine FRONTEND_URL ekleyin (örn: https://bilet.siteniz.com)' });
     }
-    const ticketUrl = `${frontendUrl}/bilet/${ticket.ticket_code}`;
-    const smsText   = `Sayin ${ticket.customer_name}, Bilet linkiniz: ${ticketUrl}`;
+    const ticketUrl      = `${frontendUrl}/bilet/${ticket.ticket_code}`;
+    const ticketUrlShort = ticketUrl.replace(/^https?:\/\//, '');
+    const smsText        = `Sayin ${ticket.customer_name}, Bilet linkiniz: ${ticketUrlShort}`;
+
     const provider    = settings.active_provider || 'iletimerkezi';
 
     // ── İleti Merkezi ─────────────────────────────────────────────────────────
