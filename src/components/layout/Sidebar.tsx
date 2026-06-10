@@ -60,7 +60,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <Ticket className="w-7 h-7 text-primary-600" />
-            <span className="font-bold text-xl text-gray-900 dark:text-white">BiletOS</span>
+            <span className="font-bold text-xl text-gray-900 dark:text-white">eBilet24</span>
           </div>
         </div>
 

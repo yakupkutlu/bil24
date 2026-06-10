@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
-import { eventsApi, sessionsApi, ticketsApi, pricingApi } from '../../lib/api';
+import { eventsApi, sessionsApi, ticketsApi, pricingApi, smsApi } from '../../lib/api';
 import { useAuth } from '../../hooks/useAuth';
 import {
   Event, Hall, PaymentMethod, PricingCategory, PricingSettings,
@@ -16,6 +16,7 @@ import HallSeatMap from '../halls/HallSeatMap';
 import {
   ChevronRight, ChevronLeft, Check, Download, Printer,
   Search, X, Tag, Plus, Trash2, User, Phone, Mail,
+  MessageSquare, ExternalLink,
 } from 'lucide-react';
 
 // ─── Tier meta ────────────────────────────────────────────────────────────────
@@ -74,6 +75,8 @@ function resolvePassenger(passengers: PassengerInfo[], i: number) {
 function TicketCard({ data, session }: { data: TicketDisplayData; session: SessionWithRelations }) {
   const { ticket, seatLabel, qrDataUrl } = data;
   const cardRef = useRef<HTMLDivElement>(null);
+  const [smsState, setSmsState] = useState<'idle' | 'sending' | 'ok' | 'err'>('idle');
+  const [smsMsg,   setSmsMsg]   = useState('');
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -170,6 +173,30 @@ function TicketCard({ data, session }: { data: TicketDisplayData; session: Sessi
     win.document.close();
   };
 
+  const handleSms = async () => {
+    if (!ticket.id) return;
+    setSmsState('sending');
+    setSmsMsg('');
+    try {
+      const result = await smsApi.send(ticket.id);
+      if (result.success) {
+        setSmsState('ok');
+        setSmsMsg('SMS gönderildi');
+      } else {
+        setSmsState('err');
+        setSmsMsg(result.error ?? 'SMS gönderilemedi');
+      }
+    } catch (err) {
+      setSmsState('err');
+      setSmsMsg(err instanceof Error ? err.message : 'SMS gönderilemedi');
+    }
+    setTimeout(() => { setSmsState('idle'); setSmsMsg(''); }, 5000);
+  };
+
+  const handleDigitalTicket = () => {
+    window.open(`/bilet/${ticket.ticket_code}`, '_blank');
+  };
+
   const sessionDate = session.session_date ? new Date(session.session_date) : null;
 
   return (
@@ -225,14 +252,41 @@ function TicketCard({ data, session }: { data: TicketDisplayData; session: Sessi
           </div>
         </div>
       </div>
-      <div className="flex gap-2 justify-end">
-        <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+      <div className="flex flex-wrap gap-2 justify-end">
+        <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
           <Printer size={15} /> Yazdır
         </button>
-        <button onClick={handleDownload} className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
+        <button onClick={handleDownload} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
           <Download size={15} /> PNG İndir
         </button>
+        <button onClick={handleDigitalTicket} className="flex items-center gap-1.5 px-3 py-1.5 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 text-sm">
+          <ExternalLink size={15} /> Dijital Bilet
+        </button>
+        <button
+          onClick={handleSms}
+          disabled={smsState === 'sending'}
+          title={(ticket as any).customer_phone ? 'SMS ile dijital bilet linki gönder' : 'Telefon numarası yok'}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+            smsState === 'ok'
+              ? 'border-green-300 text-green-700 bg-green-50'
+              : smsState === 'err'
+              ? 'border-red-300 text-red-600 bg-red-50'
+              : smsState === 'sending'
+              ? 'border-gray-200 text-gray-400 cursor-wait'
+              : (ticket as any).customer_phone
+              ? 'border-green-300 text-green-700 hover:bg-green-50'
+              : 'border-gray-200 text-gray-300 cursor-not-allowed'
+          }`}>
+          {smsState === 'sending'
+            ? <><span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> Gönderiliyor...</>
+            : <><MessageSquare size={15} /> SMS Gönder</>}
+        </button>
       </div>
+      {smsMsg && (
+        <p className={`mt-2 text-xs text-right ${smsState === 'ok' ? 'text-green-600' : 'text-red-600'}`}>
+          {smsMsg}
+        </p>
+      )}
     </div>
   );
 }
@@ -1014,11 +1068,11 @@ export default function TicketSales() {
                 const price = calculateTotalPrice();
                 return (
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-2">
-                    <div className="flex justify-between text-sm"><span className="text-gray-600">Net Toplam:</span><span className="font-medium">{formatCurrency(price.netPrice)}</span></div>
-                    <div className="flex justify-between text-sm"><span className="text-gray-600">KDV ({pricingSettings.kdv_rate}%):</span><span className="font-medium">{formatCurrency(price.kdv)}</span></div>
-                    <div className="flex justify-between text-sm"><span className="text-gray-600">Komisyon ({pricingSettings.commission_rate}%):</span><span className="font-medium">{formatCurrency(price.commission)}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-600">KDV Hariç Fiyat:</span><span className="font-medium">{formatCurrency(price.netPrice)}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-600">KDV ({pricingSettings.kdv_rate}%) <span className="text-xs text-gray-400">(dahil)</span>:</span><span className="font-medium">{formatCurrency(price.kdv)}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-600">Komisyon ({pricingSettings.commission_rate}%) <span className="text-xs text-gray-400">(dahil)</span>:</span><span className="font-medium">{formatCurrency(price.commission)}</span></div>
                     <div className="border-t border-gray-200 pt-2 flex justify-between">
-                      <span className="font-semibold text-gray-800">Toplam:</span>
+                      <span className="font-semibold text-gray-800">Toplam (KDV Dahil):</span>
                       <span className="font-bold text-xl text-blue-600">{formatCurrency(price.total)}</span>
                     </div>
                   </div>

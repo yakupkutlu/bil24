@@ -1304,9 +1304,12 @@ app.post('/api/sms/send', authMiddleware, adminOnly, async (req, res) => {
       return res.status(400).json({ error: 'Müşterinin kayıtlı telefon numarası yok' });
     }
 
-    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3002').replace(/\/$/, '');
-    const ticketUrl   = `${frontendUrl}/bilet/${ticket.ticket_code}`;
-    const smsText     = `Bilet linkiniz: ${ticketUrl}`;
+    const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+    if (!frontendUrl) {
+      return res.status(500).json({ error: 'Sunucu yapılandırma hatası: FRONTEND_URL ortam değişkeni ayarlanmamış. Coolify ortam değişkenlerine FRONTEND_URL ekleyin (örn: https://bilet.siteniz.com)' });
+    }
+    const ticketUrl = `${frontendUrl}/bilet/${ticket.ticket_code}`;
+    const smsText   = `Bilet linkiniz: ${ticketUrl}`;
     const provider    = settings.active_provider || 'iletimerkezi';
 
     // ── İleti Merkezi ─────────────────────────────────────────────────────────
