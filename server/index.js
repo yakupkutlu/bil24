@@ -74,6 +74,260 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Biletal API çalışıyor', port: PORT });
 });
 
+// ─── KURULUM SAYFASI /install ─────────────────────────────────────────────────
+// Ortam değişkeni: INSTALL_SECRET — boşsa endpoint devre dışı
+
+const INSTALL_DROP_SQL = `
+  DROP TABLE IF EXISTS activity_logs         CASCADE;
+  DROP TABLE IF EXISTS sms_settings          CASCADE;
+  DROP TABLE IF EXISTS ticket_design         CASCADE;
+  DROP TABLE IF EXISTS notification_settings CASCADE;
+  DROP TABLE IF EXISTS qr_scan_logs          CASCADE;
+  DROP TABLE IF EXISTS tickets               CASCADE;
+  DROP TABLE IF EXISTS pricing_categories    CASCADE;
+  DROP TABLE IF EXISTS pricing_settings      CASCADE;
+  DROP TABLE IF EXISTS sessions              CASCADE;
+  DROP TABLE IF EXISTS events                CASCADE;
+  DROP TABLE IF EXISTS seats                 CASCADE;
+  DROP TABLE IF EXISTS halls                 CASCADE;
+  DROP TABLE IF EXISTS users                 CASCADE;
+  DROP TYPE IF EXISTS session_status CASCADE;
+  DROP TYPE IF EXISTS ticket_status  CASCADE;
+  DROP TYPE IF EXISTS payment_status CASCADE;
+  DROP TYPE IF EXISTS payment_method CASCADE;
+  DROP TYPE IF EXISTS seat_status    CASCADE;
+  DROP TYPE IF EXISTS hall_type      CASCADE;
+  DROP TYPE IF EXISTS user_role      CASCADE;
+`;
+
+const INSTALL_CREATE_SQL = `
+  DO $$ BEGIN CREATE TYPE user_role      AS ENUM ('customer','operator','super_admin');              EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE hall_type      AS ENUM ('masali','sinema');                                EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE seat_status    AS ENUM ('empty','occupied','reserved','vip','disabled');   EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE payment_method AS ENUM ('credit_card','cash','transfer','mobile_payment'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE payment_status AS ENUM ('successful','pending','refunded');                EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE ticket_status  AS ENUM ('active','cancelled','used','expired');            EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  DO $$ BEGIN CREATE TYPE session_status AS ENUM ('active','cancelled','postponed');                 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+  CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL, full_name TEXT NOT NULL, phone TEXT,
+    role user_role NOT NULL DEFAULT 'customer', is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE halls (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), name TEXT NOT NULL, hall_type hall_type NOT NULL,
+    total_capacity INTEGER NOT NULL, masali_table_count INTEGER, masali_seats_per_table INTEGER,
+    sinema_row_groups TEXT[], sinema_rows_per_group INTEGER[], sinema_seats_per_row INTEGER[],
+    has_corridor BOOLEAN DEFAULT false, corridor_after_row INTEGER,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE seats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), hall_id UUID NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
+    seat_label TEXT NOT NULL, row_group TEXT, row_number INTEGER, seat_number INTEGER, table_label TEXT,
+    seat_status seat_status NOT NULL DEFAULT 'empty', price_multiplier DECIMAL(5,2) DEFAULT 1.00,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), title TEXT NOT NULL, slogan TEXT, description TEXT,
+    poster_url TEXT, cover_url TEXT, category TEXT, start_date DATE NOT NULL, end_date DATE,
+    is_active BOOLEAN NOT NULL DEFAULT true, created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    hall_id UUID NOT NULL REFERENCES halls(id) ON DELETE CASCADE, session_date DATE NOT NULL,
+    start_time TIME NOT NULL, duration_minutes INTEGER NOT NULL,
+    status session_status NOT NULL DEFAULT 'active', base_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE pricing_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    category_name TEXT NOT NULL, seat_status_filter seat_status NOT NULL DEFAULT 'empty',
+    price DECIMAL(10,2) NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE pricing_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), kdv_rate DECIMAL(5,2) NOT NULL DEFAULT 20.00,
+    commission_rate DECIMAL(5,2) NOT NULL DEFAULT 5.00, is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE tickets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    seat_id UUID REFERENCES seats(id) ON DELETE SET NULL, customer_name TEXT NOT NULL,
+    customer_email TEXT, customer_phone TEXT, ticket_code TEXT NOT NULL UNIQUE,
+    qr_code_data TEXT NOT NULL UNIQUE, status ticket_status NOT NULL DEFAULT 'active',
+    price DECIMAL(10,2) NOT NULL, kdv_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    commission_amount DECIMAL(10,2) NOT NULL DEFAULT 0, total_amount DECIMAL(10,2) NOT NULL,
+    payment_method payment_method NOT NULL, payment_status payment_status NOT NULL DEFAULT 'pending',
+    sold_by UUID REFERENCES users(id) ON DELETE SET NULL, is_single_use BOOLEAN NOT NULL DEFAULT true,
+    valid_until TIMESTAMPTZ, used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE qr_scan_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), ticket_id UUID NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+    scanned_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, scan_result TEXT NOT NULL,
+    is_duplicate BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE notification_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), email_enabled BOOLEAN NOT NULL DEFAULT false,
+    sms_enabled BOOLEAN NOT NULL DEFAULT false, email_from TEXT, sms_api_key TEXT, sms_sender_name TEXT,
+    send_ticket_info BOOLEAN NOT NULL DEFAULT true, send_reminder BOOLEAN NOT NULL DEFAULT true,
+    send_cancellation_notice BOOLEAN NOT NULL DEFAULT true, reminder_hours_before INTEGER NOT NULL DEFAULT 24,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE ticket_design (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), logo_url TEXT,
+    primary_color TEXT NOT NULL DEFAULT '#1e40af', secondary_color TEXT NOT NULL DEFAULT '#f59e0b',
+    font_family TEXT NOT NULL DEFAULT 'Inter', updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE activity_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id UUID, details JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE TABLE sms_settings (
+    id SERIAL PRIMARY KEY, active_provider VARCHAR(20) NOT NULL DEFAULT 'iletimerkezi',
+    im_sender VARCHAR(20), im_api_key VARCHAR(255), im_hash_key VARCHAR(255),
+    twilio_account_sid VARCHAR(255), twilio_auth_token VARCHAR(255), twilio_from VARCHAR(30),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE INDEX idx_users_email            ON users(email);
+  CREATE INDEX idx_seats_hall_id          ON seats(hall_id);
+  CREATE INDEX idx_sessions_event_id      ON sessions(event_id);
+  CREATE INDEX idx_sessions_date          ON sessions(session_date);
+  CREATE INDEX idx_tickets_session_id     ON tickets(session_id);
+  CREATE INDEX idx_tickets_sold_by        ON tickets(sold_by);
+  CREATE INDEX idx_tickets_status         ON tickets(status);
+  CREATE INDEX idx_tickets_ticket_code    ON tickets(ticket_code);
+  CREATE INDEX idx_qr_scan_logs_ticket_id ON qr_scan_logs(ticket_id);
+
+  INSERT INTO pricing_settings (kdv_rate, commission_rate, is_active) VALUES (20.00, 5.00, true);
+  INSERT INTO notification_settings (email_enabled, sms_enabled) VALUES (false, false);
+  INSERT INTO ticket_design (primary_color, secondary_color, font_family) VALUES ('#1e40af', '#f59e0b', 'Inter');
+  INSERT INTO users (email, password_hash, full_name, role) VALUES (
+    'admin@ebilet24.com',
+    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.',
+    'Sistem Yöneticisi', 'super_admin'
+  );
+`;
+
+function installPage(error, success, hideForm) {
+  const secret = process.env.INSTALL_SECRET;
+  const disabled = !secret;
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Veritabanı Kurulum — ebilet24</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#f1f5f9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.10);padding:36px;max-width:480px;width:100%}
+  .logo{font-size:22px;font-weight:800;color:#1d4ed8;letter-spacing:-0.5px;margin-bottom:6px}
+  h1{font-size:18px;color:#1e293b;margin-bottom:4px}
+  .sub{font-size:13px;color:#64748b;margin-bottom:24px}
+  .warn{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:#b91c1c;line-height:1.6}
+  .warn strong{display:block;margin-bottom:4px;font-size:14px}
+  label{font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:6px}
+  input[type=password]{width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;margin-bottom:16px;outline:none;transition:.2s}
+  input[type=password]:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+  button{width:100%;padding:12px;background:#dc2626;color:#fff;font-weight:700;border:none;border-radius:10px;font-size:15px;cursor:pointer;transition:.2s}
+  button:hover{background:#b91c1c}
+  button:disabled{background:#9ca3af;cursor:not-allowed}
+  .success{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:16px;color:#166534;font-size:13px;line-height:1.7}
+  .success strong{display:block;font-size:15px;margin-bottom:6px}
+  .error{background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:14px;color:#991b1b;font-size:13px;margin-bottom:16px}
+  .step{margin-bottom:4px;display:flex;gap:8px}
+  .step::before{content:"✓";color:#16a34a;font-weight:bold;flex-shrink:0}
+  .login-btn{display:block;margin-top:16px;text-align:center;padding:10px;background:#1d4ed8;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px}
+  .disabled-note{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:13px;color:#64748b;line-height:1.6}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">ebilet24.com</div>
+  <h1>Veritabanı Kurulum</h1>
+  <p class="sub">Sistemi sıfırlayın ve yeniden kurun</p>
+
+  ${disabled ? `
+  <div class="disabled-note">
+    <strong>⛔ Kurulum devre dışı</strong><br>
+    Bu endpoint'i aktifleştirmek için sunucuda <code>INSTALL_SECRET</code> ortam değişkenini ayarlayın.<br><br>
+    <strong>Coolify'da:</strong> Servis → Environment Variables →
+    <code>INSTALL_SECRET=gizli-anahtar-buraya</code>
+  </div>
+  ` : ''}
+
+  ${!disabled && !hideForm ? `
+  <div class="warn">
+    <strong>⚠️ DİKKAT — Geri Alınamaz İşlem</strong>
+    Bu işlem <u>tüm verileri kalıcı olarak siler</u>:<br>
+    kullanıcılar, biletler, etkinlikler, salon bilgileri, satış kayıtları.<br>
+    Sadece fresh install veya test ortamı sıfırlama için kullanın.
+  </div>
+  <form method="POST" action="/install" onsubmit="return confirm('TÜM VERİLER SİLİNECEK! Emin misiniz?')">
+    <label>Kurulum Anahtarı (INSTALL_SECRET)</label>
+    <input type="password" name="key" placeholder="Gizli anahtarı girin" required autofocus />
+    <button type="submit">🗑️ Veritabanını Sıfırla ve Yeniden Kur</button>
+  </form>
+  ` : ''}
+
+  ${error ? `<div class="error">❌ ${error}</div>` : ''}
+
+  ${success ? `
+  <div class="success">
+    <strong>✅ Kurulum başarıyla tamamlandı!</strong>
+    <div class="step">Tüm tablolar silindi</div>
+    <div class="step">Şema yeniden oluşturuldu</div>
+    <div class="step">Varsayılan ayarlar eklendi</div>
+    <div class="step">Admin kullanıcısı oluşturuldu</div>
+    <br>
+    <strong>Giriş bilgileri:</strong><br>
+    📧 admin@ebilet24.com<br>
+    🔑 Admin123!<br>
+    <em style="font-size:12px;color:#16a34a">İlk girişten sonra şifrenizi değiştirin!</em>
+  </div>
+  <a href="/" class="login-btn">→ Sisteme Git</a>
+  ` : ''}
+</div>
+</body>
+</html>`;
+}
+
+app.get('/install', (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(installPage(null, false, false));
+});
+
+app.post('/install', express.urlencoded({ extended: false }), async (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  const secret = process.env.INSTALL_SECRET;
+  if (!secret) {
+    return res.status(403).send(installPage('INSTALL_SECRET ortam değişkeni tanımlı değil.', false, true));
+  }
+  if (req.body.key !== secret) {
+    return res.status(401).send(installPage('Hatalı kurulum anahtarı.', false, false));
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(INSTALL_DROP_SQL);
+    await client.query(INSTALL_CREATE_SQL);
+    await client.query('COMMIT');
+    console.log('✅ Veritabanı kurulumu tamamlandı.');
+    res.send(installPage(null, true, true));
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Install error:', err.message);
+    res.status(500).send(installPage('Kurulum hatası: ' + err.message, false, false));
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/health', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT NOW() as time, current_database() as db');

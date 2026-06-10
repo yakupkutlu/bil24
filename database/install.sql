@@ -1,13 +1,34 @@
 -- ================================================================
--- ebilet24 / BİLETAL — PostgreSQL Şeması
--- Versiyon: 2.1  |  2026-06-09
--- Bağlantı: bilet_user / Bilet!guclu* / bilet_db / 5432
--- Not: Tablo başına IF NOT EXISTS — yeniden çalıştırılabilir.
--- ENUM'lar için DO bloğu kullanılır (PostgreSQL 9.3+).
+-- ebilet24 / BİLETAL — TAM KURULUM SCRIPTI
+-- ⚠️  DİKKAT: Tüm verileri siler ve sıfırdan oluşturur!
+-- Kullanım: pgAdmin veya Coolify DB terminali üzerinden çalıştırın.
 -- ================================================================
 
--- ── ENUM TİPLERİ ─────────────────────────────────────────────────────────────
+-- ── 1. MEVCUT TABLOLARI SİL ──────────────────────────────────────
+DROP TABLE IF EXISTS activity_logs         CASCADE;
+DROP TABLE IF EXISTS sms_settings          CASCADE;
+DROP TABLE IF EXISTS ticket_design         CASCADE;
+DROP TABLE IF EXISTS notification_settings CASCADE;
+DROP TABLE IF EXISTS qr_scan_logs          CASCADE;
+DROP TABLE IF EXISTS tickets               CASCADE;
+DROP TABLE IF EXISTS pricing_categories    CASCADE;
+DROP TABLE IF EXISTS pricing_settings      CASCADE;
+DROP TABLE IF EXISTS sessions              CASCADE;
+DROP TABLE IF EXISTS events                CASCADE;
+DROP TABLE IF EXISTS seats                 CASCADE;
+DROP TABLE IF EXISTS halls                 CASCADE;
+DROP TABLE IF EXISTS users                 CASCADE;
 
+-- ── 2. ENUM TİPLERİNİ SİL ────────────────────────────────────────
+DROP TYPE IF EXISTS session_status CASCADE;
+DROP TYPE IF EXISTS ticket_status  CASCADE;
+DROP TYPE IF EXISTS payment_status CASCADE;
+DROP TYPE IF EXISTS payment_method CASCADE;
+DROP TYPE IF EXISTS seat_status    CASCADE;
+DROP TYPE IF EXISTS hall_type      CASCADE;
+DROP TYPE IF EXISTS user_role      CASCADE;
+
+-- ── 3. ENUM TİPLERİNİ OLUŞTUR ────────────────────────────────────
 DO $$ BEGIN CREATE TYPE user_role      AS ENUM ('customer','operator','super_admin');               EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE hall_type      AS ENUM ('masali','sinema');                                 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE seat_status    AS ENUM ('empty','occupied','reserved','vip','disabled');    EXCEPTION WHEN duplicate_object THEN NULL; END $$;
@@ -16,9 +37,9 @@ DO $$ BEGIN CREATE TYPE payment_status AS ENUM ('successful','pending','refunded
 DO $$ BEGIN CREATE TYPE ticket_status  AS ENUM ('active','cancelled','used','expired');             EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE session_status AS ENUM ('active','cancelled','postponed');                  EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- ── TABLOLAR ─────────────────────────────────────────────────────────────────
+-- ── 4. TABLOLARI OLUŞTUR ──────────────────────────────────────────
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
   id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   email         TEXT        NOT NULL UNIQUE,
   password_hash TEXT        NOT NULL,
@@ -30,15 +51,13 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS halls (
-  id                     UUID      PRIMARY KEY DEFAULT gen_random_uuid(),
-  name                   TEXT      NOT NULL,
-  hall_type              hall_type NOT NULL,
-  total_capacity         INTEGER   NOT NULL,
-  -- Masalı salon
+CREATE TABLE halls (
+  id                     UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name                   TEXT        NOT NULL,
+  hall_type              hall_type   NOT NULL,
+  total_capacity         INTEGER     NOT NULL,
   masali_table_count     INTEGER,
   masali_seats_per_table INTEGER,
-  -- Sinema salonu
   sinema_row_groups      TEXT[],
   sinema_rows_per_group  INTEGER[],
   sinema_seats_per_row   INTEGER[],
@@ -48,20 +67,20 @@ CREATE TABLE IF NOT EXISTS halls (
   updated_at             TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS seats (
-  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  hall_id          UUID        NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
-  seat_label       TEXT        NOT NULL,
+CREATE TABLE seats (
+  id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  hall_id          UUID         NOT NULL REFERENCES halls(id) ON DELETE CASCADE,
+  seat_label       TEXT         NOT NULL,
   row_group        TEXT,
   row_number       INTEGER,
   seat_number      INTEGER,
   table_label      TEXT,
-  seat_status      seat_status NOT NULL DEFAULT 'empty',
+  seat_status      seat_status  NOT NULL DEFAULT 'empty',
   price_multiplier DECIMAL(5,2) DEFAULT 1.00,
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at       TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS events (
+CREATE TABLE events (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   title       TEXT        NOT NULL,
   slogan      TEXT,
@@ -77,7 +96,7 @@ CREATE TABLE IF NOT EXISTS events (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS sessions (
+CREATE TABLE sessions (
   id               UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id         UUID           NOT NULL REFERENCES events(id)  ON DELETE CASCADE,
   hall_id          UUID           NOT NULL REFERENCES halls(id)   ON DELETE CASCADE,
@@ -90,18 +109,16 @@ CREATE TABLE IF NOT EXISTS sessions (
   updated_at       TIMESTAMPTZ    NOT NULL DEFAULT now()
 );
 
--- Altın / Gümüş / Bronz ve özel kategoriler (seans başına)
-CREATE TABLE IF NOT EXISTS pricing_categories (
+CREATE TABLE pricing_categories (
   id                 UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id         UUID          NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-  category_name      TEXT          NOT NULL,        -- 'Altın Kategori', 'Gümüş Kategori', 'Bronz Kategori'
+  category_name      TEXT          NOT NULL,
   seat_status_filter seat_status   NOT NULL DEFAULT 'empty',
   price              DECIMAL(10,2) NOT NULL,
   created_at         TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
 
--- KDV ve komisyon oranı (tek satır tutulur)
-CREATE TABLE IF NOT EXISTS pricing_settings (
+CREATE TABLE pricing_settings (
   id              UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   kdv_rate        DECIMAL(5,2)  NOT NULL DEFAULT 20.00,
   commission_rate DECIMAL(5,2)  NOT NULL DEFAULT 5.00,
@@ -110,7 +127,7 @@ CREATE TABLE IF NOT EXISTS pricing_settings (
   updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS tickets (
+CREATE TABLE tickets (
   id                UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id        UUID           NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
   seat_id           UUID           REFERENCES seats(id) ON DELETE SET NULL,
@@ -134,16 +151,16 @@ CREATE TABLE IF NOT EXISTS tickets (
   updated_at        TIMESTAMPTZ    NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS qr_scan_logs (
+CREATE TABLE qr_scan_logs (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  ticket_id    UUID        NOT NULL REFERENCES tickets(id)  ON DELETE CASCADE,
-  scanned_by   UUID        NOT NULL REFERENCES users(id)   ON DELETE CASCADE,
+  ticket_id    UUID        NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  scanned_by   UUID        NOT NULL REFERENCES users(id)  ON DELETE CASCADE,
   scan_result  TEXT        NOT NULL,
   is_duplicate BOOLEAN     NOT NULL DEFAULT false,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS notification_settings (
+CREATE TABLE notification_settings (
   id                       UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   email_enabled            BOOLEAN     NOT NULL DEFAULT false,
   sms_enabled              BOOLEAN     NOT NULL DEFAULT false,
@@ -157,7 +174,7 @@ CREATE TABLE IF NOT EXISTS notification_settings (
   updated_at               TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS ticket_design (
+CREATE TABLE ticket_design (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   logo_url        TEXT,
   primary_color   TEXT        NOT NULL DEFAULT '#1e40af',
@@ -166,7 +183,7 @@ CREATE TABLE IF NOT EXISTS ticket_design (
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS activity_logs (
+CREATE TABLE activity_logs (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   action      TEXT        NOT NULL,
@@ -176,15 +193,12 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- SMS API ayarları (İleti Merkezi + Twilio çoklu sağlayıcı)
-CREATE TABLE IF NOT EXISTS sms_settings (
+CREATE TABLE sms_settings (
   id                 SERIAL       PRIMARY KEY,
   active_provider    VARCHAR(20)  NOT NULL DEFAULT 'iletimerkezi',
-  -- İleti Merkezi
   im_sender          VARCHAR(20),
   im_api_key         VARCHAR(255),
   im_hash_key        VARCHAR(255),
-  -- Twilio
   twilio_account_sid VARCHAR(255),
   twilio_auth_token  VARCHAR(255),
   twilio_from        VARCHAR(30),
@@ -192,73 +206,41 @@ CREATE TABLE IF NOT EXISTS sms_settings (
   updated_at         TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
 
--- ── MİGRASYON: mevcut sms_settings tablosunu güncelle ────────────────────────
--- (Eski kurulumda sadece sender/api_key/hash_key vardı — yeni sütunları ekle)
+-- ── 5. İNDEKSLER ─────────────────────────────────────────────────
+CREATE INDEX idx_users_email            ON users(email);
+CREATE INDEX idx_seats_hall_id          ON seats(hall_id);
+CREATE INDEX idx_seats_status           ON seats(seat_status);
+CREATE INDEX idx_sessions_event_id      ON sessions(event_id);
+CREATE INDEX idx_sessions_hall_id       ON sessions(hall_id);
+CREATE INDEX idx_sessions_date          ON sessions(session_date);
+CREATE INDEX idx_sessions_status        ON sessions(status);
+CREATE INDEX idx_pricing_cats_session   ON pricing_categories(session_id);
+CREATE INDEX idx_tickets_session_id     ON tickets(session_id);
+CREATE INDEX idx_tickets_seat_id        ON tickets(seat_id);
+CREATE INDEX idx_tickets_sold_by        ON tickets(sold_by);
+CREATE INDEX idx_tickets_status         ON tickets(status);
+CREATE INDEX idx_tickets_qr_code_data   ON tickets(qr_code_data);
+CREATE INDEX idx_tickets_ticket_code    ON tickets(ticket_code);
+CREATE INDEX idx_qr_scan_logs_ticket_id ON qr_scan_logs(ticket_id);
+CREATE INDEX idx_activity_logs_user_id  ON activity_logs(user_id);
+CREATE INDEX idx_activity_logs_entity   ON activity_logs(entity_type, entity_id);
 
-ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS active_provider    VARCHAR(20)  NOT NULL DEFAULT 'iletimerkezi';
-ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS im_sender          VARCHAR(20);
-ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS im_api_key         VARCHAR(255);
-ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS im_hash_key        VARCHAR(255);
-ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS twilio_account_sid VARCHAR(255);
-ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS twilio_auth_token  VARCHAR(255);
-ALTER TABLE sms_settings ADD COLUMN IF NOT EXISTS twilio_from        VARCHAR(30);
+-- ── 6. VARSAYILAN VERİLER ─────────────────────────────────────────
+INSERT INTO pricing_settings (kdv_rate, commission_rate, is_active) VALUES (20.00, 5.00, true);
+INSERT INTO notification_settings (email_enabled, sms_enabled) VALUES (false, false);
+INSERT INTO ticket_design (primary_color, secondary_color, font_family) VALUES ('#1e40af', '#f59e0b', 'Inter');
 
--- Eski sütunlardaki veriyi yeni sütunlara taşı (bir kere çalışır)
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name='sms_settings' AND column_name='api_key'
-  ) THEN
-    UPDATE sms_settings
-    SET im_sender  = sender,
-        im_api_key = api_key,
-        im_hash_key = hash_key
-    WHERE im_api_key IS NULL AND api_key IS NOT NULL;
-  END IF;
-END $$;
-
--- ── İNDEKSLER ────────────────────────────────────────────────────────────────
-
-CREATE INDEX IF NOT EXISTS idx_users_email             ON users(email);
-CREATE INDEX IF NOT EXISTS idx_seats_hall_id           ON seats(hall_id);
-CREATE INDEX IF NOT EXISTS idx_seats_status            ON seats(seat_status);
-CREATE INDEX IF NOT EXISTS idx_sessions_event_id       ON sessions(event_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_hall_id        ON sessions(hall_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_date           ON sessions(session_date);
-CREATE INDEX IF NOT EXISTS idx_sessions_status         ON sessions(status);
-CREATE INDEX IF NOT EXISTS idx_pricing_cats_session    ON pricing_categories(session_id);
-CREATE INDEX IF NOT EXISTS idx_tickets_session_id      ON tickets(session_id);
-CREATE INDEX IF NOT EXISTS idx_tickets_seat_id         ON tickets(seat_id);
-CREATE INDEX IF NOT EXISTS idx_tickets_sold_by         ON tickets(sold_by);
-CREATE INDEX IF NOT EXISTS idx_tickets_status          ON tickets(status);
-CREATE INDEX IF NOT EXISTS idx_tickets_qr_code_data    ON tickets(qr_code_data);
-CREATE INDEX IF NOT EXISTS idx_tickets_ticket_code     ON tickets(ticket_code);
-CREATE INDEX IF NOT EXISTS idx_qr_scan_logs_ticket_id  ON qr_scan_logs(ticket_id);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id   ON activity_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_entity    ON activity_logs(entity_type, entity_id);
-
--- ── VARSAYILAN VERİLER (yoksa ekle) ──────────────────────────────────────────
-
-INSERT INTO pricing_settings (kdv_rate, commission_rate, is_active)
-SELECT 20.00, 5.00, true
-WHERE NOT EXISTS (SELECT 1 FROM pricing_settings);
-
-INSERT INTO notification_settings (email_enabled, sms_enabled)
-SELECT false, false
-WHERE NOT EXISTS (SELECT 1 FROM notification_settings);
-
-INSERT INTO ticket_design (primary_color, secondary_color, font_family)
-SELECT '#1e40af', '#f59e0b', 'Inter'
-WHERE NOT EXISTS (SELECT 1 FROM ticket_design);
-
--- ── İLK SUPER ADMIN ──────────────────────────────────────────────────────────
--- Geçici şifre: Admin123!  (bcrypt 10 tur)
--- Sisteme ilk girişten sonra Profil Ayarları > Şifre Değiştir bölümünden güncelleyin.
-
-INSERT INTO users (email, password_hash, full_name, role)
-SELECT
-  'superadmin@ebilet24.com',
+-- ── 7. İLK SUPER ADMIN ───────────────────────────────────────────
+-- Şifre: Admin123!  (bcrypt 10 tur)
+-- İlk girişten sonra değiştirin!
+INSERT INTO users (email, password_hash, full_name, role) VALUES (
+  'admin@biletal.com',
   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.',
   'Sistem Yöneticisi',
   'super_admin'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@ebilet24.com');
+);
+
+-- ================================================================
+-- Kurulum tamamlandı.
+-- Giriş: admin@ebilet24.com  /  Admin123!
+-- ================================================================
