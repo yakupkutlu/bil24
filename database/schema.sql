@@ -256,9 +256,5 @@ WHERE NOT EXISTS (SELECT 1 FROM ticket_design);
 -- Sisteme ilk girişten sonra Profil Ayarları > Şifre Değiştir bölümünden güncelleyin.
 
 INSERT INTO users (email, password_hash, full_name, role)
-SELECT
-  'superadmin@ebilet24.com',
-  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.',
-  'Sistem Yöneticisi',
-  'super_admin'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@ebilet24.com');
+SELECT 'admin@biletal.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'Sistem Yöneticisi', 'super_admin'
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@biletal.com');

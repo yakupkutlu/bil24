@@ -194,22 +194,29 @@ const INSTALL_CREATE_SQL = `
 
   CREATE INDEX idx_users_email            ON users(email);
   CREATE INDEX idx_seats_hall_id          ON seats(hall_id);
+  CREATE INDEX idx_seats_status           ON seats(seat_status);
   CREATE INDEX idx_sessions_event_id      ON sessions(event_id);
+  CREATE INDEX idx_sessions_hall_id       ON sessions(hall_id);
   CREATE INDEX idx_sessions_date          ON sessions(session_date);
+  CREATE INDEX idx_sessions_status        ON sessions(status);
+  CREATE INDEX idx_pricing_cats_session   ON pricing_categories(session_id);
   CREATE INDEX idx_tickets_session_id     ON tickets(session_id);
+  CREATE INDEX idx_tickets_seat_id        ON tickets(seat_id);
   CREATE INDEX idx_tickets_sold_by        ON tickets(sold_by);
   CREATE INDEX idx_tickets_status         ON tickets(status);
+  CREATE INDEX idx_tickets_qr_code_data   ON tickets(qr_code_data);
   CREATE INDEX idx_tickets_ticket_code    ON tickets(ticket_code);
   CREATE INDEX idx_qr_scan_logs_ticket_id ON qr_scan_logs(ticket_id);
+  CREATE INDEX idx_activity_logs_user_id  ON activity_logs(user_id);
+  CREATE INDEX idx_activity_logs_entity   ON activity_logs(entity_type, entity_id);
 
   INSERT INTO pricing_settings (kdv_rate, commission_rate, is_active) VALUES (20.00, 5.00, true);
   INSERT INTO notification_settings (email_enabled, sms_enabled) VALUES (false, false);
   INSERT INTO ticket_design (primary_color, secondary_color, font_family) VALUES ('#1e40af', '#f59e0b', 'Inter');
-  INSERT INTO users (email, password_hash, full_name, role) VALUES (
-    'admin@ebilet24.com',
-    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.',
-    'Sistem Yöneticisi', 'super_admin'
-  );
+  INSERT INTO users (email, password_hash, full_name, role) VALUES
+    ('admin@biletal.com',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'Sistem Yöneticisi', 'super_admin'),
+    ('musteri@biletal.com',  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'Test Müşteri',      'customer'),
+    ('operator@biletal.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'Test Operatör',     'operator');
 `;
 
 function installPage(error, success, hideForm) {

@@ -689,20 +689,6 @@ export default function TicketSales() {
 
       const created = await ticketsApi.bulkCreate(ticketsToCreate);
 
-      // Koltukları dolu olarak işaretle
-      await Promise.all(
-        seatsSnapshot.map(seat =>
-          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/seats/${seat.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('biletal_token')}`,
-            },
-            body: JSON.stringify({ seat_status: 'occupied' }),
-          })
-        )
-      );
-
       // QR PNG oluştur
       const displayData: TicketDisplayData[] = await Promise.all(
         created.map(async (ticket) => {

@@ -4,7 +4,7 @@ export function cn(...classes: (string | boolean | undefined | null)[]): string 
 
 export function generateTicketCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = 'BOS-';
+  let result = 'EBILET24-';
   for (let i = 0; i < 8; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }

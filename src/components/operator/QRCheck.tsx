@@ -261,7 +261,7 @@ export default function QRCheck() {
             value={manualCode}
             onChange={e => setManualCode(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleManualSearch()}
-            placeholder="BOS-XXXXXXXX"
+            placeholder="EBILET24-XXXXXXXX"
             className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-sm"
           />
           <button

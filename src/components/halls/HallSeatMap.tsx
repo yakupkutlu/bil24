@@ -52,8 +52,9 @@ export default function HallSeatMap({ hallId, sessionId, selectedSeats = [], onS
 
   const handleSeatClick = (seat: SeatWithStatus) => {
     if (!interactive || !onSeatSelect) return;
-    if (seat.seat_status !== 'empty' && seat.seat_status !== 'vip' && seat.seat_status !== 'disabled') return;
+    // Seans bazlı dolu koltuk veya manuel rezerve — seçilemez
     if (seat.isOccupied) return;
+    if (seat.seat_status === 'reserved') return;
     const updatedSeats = seats.map(s => s.id === seat.id ? { ...s, isSelected: !s.isSelected } : s);
     setSeats(updatedSeats);
     onSeatSelect(seat.id, seat);
@@ -61,14 +62,13 @@ export default function HallSeatMap({ hallId, sessionId, selectedSeats = [], onS
 
   const getSeatColorClass = (seat: SeatWithStatus): string => {
     if (seat.isSelected) return 'seat-selected';
-    if (seat.isOccupied) return 'seat-occupied';
+    if (seat.isOccupied) return 'seat-occupied';  // seans bazlı doluluk
     switch (seat.seat_status) {
-      case 'empty': return 'seat-empty';
-      case 'occupied': return 'seat-occupied';
-      case 'reserved': return 'seat-reserved';
-      case 'vip': return 'seat-vip';
-      case 'disabled': return 'seat-disabled-seat';
-      default: return 'seat-empty';
+      case 'reserved':      return 'seat-reserved';
+      case 'vip':           return 'seat-vip';
+      case 'disabled':      return 'seat-disabled-seat';
+      // 'occupied' DB değeri artık ticket tablosundan hesaplanıyor — boş göster
+      default:              return 'seat-empty';
     }
   };
 
@@ -129,7 +129,7 @@ function SinemaLayout({ hall, seats, onSeatClick, getSeatColorClass }: { hall: H
                         return (
                           <SeatButton key={seat.id} seat={seat} colorClass={getSeatColorClass(seat)}
                             onClick={() => onSeatClick(seat)}
-                            interactive={!!(seat.seat_status === 'empty' || seat.seat_status === 'vip' || seat.seat_status === 'disabled') && !seat.isOccupied} />
+                            interactive={!seat.isOccupied && seat.seat_status !== 'reserved'} />
                         );
                       })}
                     </div>
@@ -167,7 +167,7 @@ function MasaliLayout({ seats, onSeatClick, getSeatColorClass }: { seats: (Seat 
             {tableSeats.map(seat => (
               <SeatButton key={seat.id} seat={seat} colorClass={getSeatColorClass(seat)}
                 onClick={() => onSeatClick(seat)}
-                interactive={!!(seat.seat_status === 'empty' || seat.seat_status === 'vip' || seat.seat_status === 'disabled') && !seat.isOccupied} />
+                interactive={!seat.isOccupied && seat.seat_status !== 'reserved'} />
             ))}
           </div>
         </div>

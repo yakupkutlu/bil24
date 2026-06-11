@@ -297,7 +297,7 @@ export default function SmsSettingsPage() {
         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">SMS mesaj önizlemesi</p>
           <div className="bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-3 text-sm text-gray-700 dark:text-gray-300 font-mono">
-            Bilet linkiniz: https://siteadresi.com/bilet/<span className="text-blue-600 dark:text-blue-400">BOS-XXXXXXXX</span>
+            Bilet linkiniz: https://siteadresi.com/bilet/<span className="text-blue-600 dark:text-blue-400">EBILET24-XXXXXXXX</span>
           </div>
         </div>
       </form>

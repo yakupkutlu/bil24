@@ -107,8 +107,11 @@ export const seatsApi = {
   listWithOccupied: async (hall_id: string, session_id?: string) => {
     const seats = await api.get<import('../types').Seat[]>('/api/seats', { hall_id });
     if (!session_id) return seats;
-    const tickets = await api.get<{ seat_id: string }[]>('/api/tickets', { session_id });
-    const occupied = new Set(tickets.map(t => t.seat_id).filter(Boolean));
+    const tickets = await api.get<{ seat_id: string; status: string }[]>('/api/tickets', { session_id });
+    // İptal edilmiş biletler koltuğu dolu saymaz
+    const occupied = new Set(
+      tickets.filter(t => t.status !== 'cancelled').map(t => t.seat_id).filter(Boolean)
+    );
     return seats.map(s => ({ ...s, isOccupied: occupied.has(s.id) }));
   },
 };
